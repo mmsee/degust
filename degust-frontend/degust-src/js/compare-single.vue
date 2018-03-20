@@ -32,7 +32,7 @@
             :uniqueCode='code'
             @showAbout='v => show_about = v'
             >
-            <li slot="qclist" class="dropdown">
+            <li slot="qclist" class="dropdown" v-if='!is_pre_analysed'>
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                 QC <span class="caret"></span>
                 </a>
@@ -45,17 +45,19 @@
   <div class="container">
     <!-- About box Modal -->
     <about :show='show_about' @close='show_about=false'></about>
+
     <div v-if='load_success'>
       <div class='row'>
         <div class='col-xs-3'>
           <div class='row'> <!-- Give Condition Selector its own row-->
-            <conditions-selector v-show='!settings.is_pre_analysed' style='width:100%;'
+            <conditions-selector v-show='!is_pre_analysed' style='width:100%;'
                               :settings='settings'
                               :dge_method='dge_method'
                               :sel_conditions='sel_conditions'
                               :sel_contrast='sel_contrast'
                               :dge_methods='dge_methods'
-                              @apply='change_samples'>
+                              @apply='change_samples'
+                              @SampleWeights='show_extraInfo=true'>
             </conditions-selector>
           </div>
           <hr/>
@@ -87,7 +89,7 @@
               </div>
 
               <div v-tooltip="tip('Filter page to genes in this list')">
-                <label>Create Filter</label>
+                <label>Gene list</label>
                 <a @click='showGeneList=true'>{{(filter_gene_list.length == 0) ? "Create Filter" : "List Size: " + filter_gene_list.length }}</a>
               </div>
 
@@ -106,7 +108,7 @@
               </div>
               <div class='pca-opts' v-show="cur_plot=='mds'">
                 <div class='pca-title'>MDS options</div>
-                <div v-tooltip="tip('Normalization of gene expression used to calculated MDS and Heatmap')">
+                <div v-if='!is_maxquant' v-tooltip="tip('Normalization of gene expression used to calculated MDS and Heatmap')">
                   <label>Normalized</label>
                   <select v-model='normalization'>
                     <option value='cpm'>CPM</option>
@@ -128,7 +130,6 @@
                   <label>Num genes</label>
                   <slider-text class='slider-control'
                               v-model='numGenesThreshold'
-                              :step-values='fcStepValues'
                               :validator="intValidator"
                               ref='num_genes'
                               >
@@ -194,7 +195,7 @@
               <li :class='{active: cur_plot=="ma"}'>
                   <a @click='cur_plot="ma"'>MA plot</a>
               </li>
-              <li :class='{active: cur_plot=="mds"}'>
+              <li :class='{active: cur_plot=="mds"}' v-if='!is_pre_analysed'>
                   <a @click='cur_plot="mds"'>MDS plot</a>
               </li>
               <li :class='{active: cur_plot=="volcano"}'>
@@ -259,7 +260,7 @@
             </div><!-- expression -->
 
             <div class='col-xs-3'>
-              <gene-stripchart v-if='true'
+              <gene-stripchart v-if='!is_pre_analysed'
                               :gene-data='gene_data'
                               :colour='condition_colouring'
                               :useIntensity='is_maxquant'
@@ -304,32 +305,25 @@
     <!-- Gene List box Modal -->
     <filterGenes :show='showGeneList' @close='showGeneList=false' @filterList='filterList'></filterGenes>
 
-    <qc-plots :show-qc='show_qc'
+    <extraInfo
+              :show='show_extraInfo'
+              :extraInfoData='extraInfo_data'
+              @close='show_extraInfo=false'>
+    </extraInfo>
+
+    <qc-plots
+              :show-qc='show_qc'
               :gene-data='gene_data'
               :colour='condition_colouring'
               @close='show_qc=""'>
     </qc-plots>
 
-    <!-- Error box Modal -->
-    <div id='error-modal' class='modal fade' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
-      <div class='modal-dialog'>
-        <div class='modal-content'>
-          <div class='modal-header'>
-            <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>x</button>
-            <h3>Error</h3>
-          </div>
-          <div class='modal-body'>
-            Error Message:
-            <pre class='error-msg'></pre>
-            Input:
-            <pre class='error-input'></pre>
-          </div>
-          <div class='modal-footer'>
-            <button class='btn btn-primary' data-dismiss='modal' aria-hidden='true'>Close</button>
-          </div>
-        </div><!-- /.modal-content -->
-      </div><!-- /.modal-dialog -->
-    </div><!-- /.modal -->
+    <ErrorMsg
+                  :show='show_Error'
+                  :errorMsg='error_msg'
+                  @close='show_Error=false'
+    >
+    </ErrorMsg>
 
     <!-- Modal for showing R code -->
     <modal :showModal='r_code.length>0' :closeAction='close_r_code'>

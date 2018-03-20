@@ -36,12 +36,22 @@
       color: #069;
     }
 
+    #experimentDescription {
+      resize: none;
+      height: 37px;
+      transition: all 0.4s;
+    }
+
+    #experimentDescription:focus {
+      resize: none;
+      height: 200px;
+      transition: all 0.4s;
+    }
 
     .flip-list-move {
         transition: transform 1s;
     }
 </style>
-
 
 <template>
     <div>
@@ -97,6 +107,13 @@
                 </div>
               </div>
 
+              <div class="form-group">
+                <label class="control-label col-sm-3">Experiment Description</label>
+                <div class="controls col-sm-6" >
+                  <textarea class="form-control" v-model="settings.experimentDescription" type="text" placeholder="" id="experimentDescription" v-tooltip="tip('Brief Decription of Expriment')" size='30'/>
+                </div>
+              </div>
+
               <div v-show='is_rnaseq_counts'>
                 <div class="form-group">
                   <label class="control-label col-sm-3" for="name">Min gene read count</label>
@@ -120,7 +137,7 @@
                 <div class="form-group">
                   <label class="control-label col-sm-3" for="name">Min present columns</label>
                   <div class="controls col-sm-1">
-                    <input v-model.number='settings.min_columns' class="form-control" type="text" name="min-columnns" placeholder="0" v-tooltip="tip('Optional: Minumum percent of columns with values present to keep the protein')" />
+                    <input v-model.number='settings.min_cpm' class="form-control" type="text" name="min-columnns" placeholder="0.8" v-tooltip="tip('Optional: Minumum percent of columns with values present to keep the protein')" />
                   </div>
                 </div>
                 <div class="form-group">

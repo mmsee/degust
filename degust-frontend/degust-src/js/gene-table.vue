@@ -1,5 +1,5 @@
 <style scoped>
-#grid { height: 300px; }
+div >>> #grid { height: 300px; }
 
 #grid >>> .slick-row { font-size: 9pt; }
 #grid >>> .slick-row:hover {
@@ -31,23 +31,22 @@ div.csv-download-div { float: right; margin: -7px 30px 0 0; }
                     <div slot="body" @mousedown.stop>
                     <div class='text-left' slot="body" @mousedown.stop>
                         <label>
-                            <input type='checkbox' v-model='sortAbsLogFC'/>
                             Sorting by ABSOLUTE logFC
                             <input type='checkbox' v-model='sortAbsLogFC'/>
                         </label>
                         <div>
-                        <label v-show="!useProt">
+                        <label v-if="!useProt">
                             Show Counts
                             <select v-model="showCounts">
-                                <option selected value='no'>No</option>
+                                <option value='no'>No</option>
                                 <option value='yes'>Yes</option>
                                 <option value='cpm'>As counts-per-million</option>
                             </select>
                         </label>
-                        <label v-show="useProt">
+                        <label v-else-if="useProt">
                             Show Intensity
                             <select v-model="showIntensity">
-                                <option selected value='no'>No</option>
+                                <option value='no'>No</option>
                                 <option value='yes'>Yes</option>
                                 <option value='log2'>As Log2 Intensity</option>
                             </select>
@@ -182,10 +181,6 @@ module.exports =
         rows:
             default: []
             required: true
-        showCounts:
-            default: false
-        showIntensity:
-            default: false
         fcColumns:
             required: true
         useProt:
@@ -197,6 +192,8 @@ module.exports =
             top: 0
             btm: 0
             total: 0
+        showCounts: "no"
+        showIntensity: "no"
     watch:
         # Not detected automatically in the gene_table_columns cause only used in a callback
         showCounts: () ->
@@ -222,6 +219,8 @@ module.exports =
                             me.fc_div(val, col, row)
                         else if col.type in ['fdr','p']
                             if val<0.01 then val.toExponential(2) else val.toFixed(2)
+                        else if col.type == "info"
+                            val.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
                         else
                             val
                 if col.type in ['fdr','p']
@@ -246,7 +245,6 @@ module.exports =
                         return true if str? &&
                             typeof str == 'string' &&
                             searchStr.map((el) -> str.toLowerCase().indexOf(el)>=0).reduce((a,b) -> a || b)
-                                       #str.indexOf(searchStr)>=0
                     false
                 )
     methods:
