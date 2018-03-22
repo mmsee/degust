@@ -15,7 +15,6 @@
     * In Firefox: The condition selector clips group the sample is added to in half
 
 * UI
-    * Select columns on table
     * Add "delete dataset" from config
 
 * Work on
