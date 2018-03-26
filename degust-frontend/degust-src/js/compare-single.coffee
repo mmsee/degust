@@ -386,7 +386,6 @@ module.exports =
             this.show_hoverDesc = true
             locRect = document.getElementById("experimentDescriptionLoc").getBoundingClientRect()
             this.descTooltipLoc = [(locRect.left + locRect.width + 1), locRect.top - 60] #Need to find a better way to set this y-axis location.
-            console.log(locRect.left, locRect.top)
             return
 
         modalExperimentDesc: () ->
