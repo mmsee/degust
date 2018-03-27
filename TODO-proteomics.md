@@ -15,8 +15,11 @@
     * In Firefox: The condition selector clips group the sample is added to in half
 
 * UI
-    * Add "delete dataset" from config
 
 * Work on
     * Vue Router
     * VueX
+
+* JQuery
+    * Bootstrap
+    * Save/Delete (config page)
