@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>FAQ - Degust User Manual</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="../css/highlight.css">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "FAQ";
+    var mkdocs_page_input_path = "faq.md";
+    var mkdocs_page_url = "/faq/";
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js"></script>
+  <script src="../js/modernizr-2.8.3.min.js"></script>
+  <script type="text/javascript" src="../js/highlight.pack.js"></script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> Degust User Manual</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="..">Home</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../quickstart/">QuickStart</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../visualisations/">Visualisations</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../devfeatures/">Dev Features</a>
+	    </li>
+          
+            <li class="toctree-l1 current">
+		
+    <a class="current" href="./">FAQ</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l2"><a href="#faq">FAQ</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l3" href="#how-can-a-gene-have-zero-counts-for-all-samples-but-has-a-non-zero-fold-change">How can a gene have zero counts for all samples but has a non-zero fold-change?</a></li>
+        
+            <li><a class="toctree-l3" href="#what-is-the-min-read-count-setting">What is the Min read count setting?</a></li>
+        
+            <li><a class="toctree-l3" href="#i-dont-see-an-option-to-display-an-mds-plot">I don't see an option to display an MDS plot</a></li>
+        
+            <li><a class="toctree-l3" href="#how-is-the-mds-plot-calculated">How is the MDS plot calculated</a></li>
+        
+            <li><a class="toctree-l3" href="#configuring-a-degust-session-programmatically">Configuring a Degust session programmatically</a></li>
+        
+        </ul>
+    
+
+    </ul>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">Degust User Manual</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>FAQ</li>
+    <li class="wy-breadcrumbs-aside">
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="faq">FAQ</h1>
+<h3 id="how-can-a-gene-have-zero-counts-for-all-samples-but-has-a-non-zero-fold-change">How can a gene have zero counts for all samples but has a non-zero fold-change?</h3>
+<p>This can happen when using the backend of Degust.  Degust uses voom (or edgeR) to perform the expression analysis.  Voom adds a small constant (0.5), to each count, normalizes for library size, then takes the log.  This means when you have a count of 0 across all samples, but different library sizes, it is possible to compute a non-zero fold-change.</p>
+<p>We recommend setting <strong>Min read count</strong> on the configuration page to a small value, say 10.</p>
+<h3 id="what-is-the-min-read-count-setting">What is the <strong>Min read count</strong> setting?</h3>
+<p>This is the minimum number of reads required in at least one sample to keep the gene in the analysis.  That is, a given gene is omitted if the number of reads across all samples is below this setting.</p>
+<h3 id="i-dont-see-an-option-to-display-an-mds-plot">I don't see an option to display an MDS plot</h3>
+<p>The MDS plot is only available when you have included "count" columns</p>
+<h3 id="how-is-the-mds-plot-calculated">How is the MDS plot calculated</h3>
+<ul>
+<li>First genes that don't pass the "FDR cut-off" or "abs log FC" filters are ignored.  Using these filters is "cheating" when doing an MDS plot to look at replicate clustering</li>
+<li>The remaining genes have the counts for each replicate log-transformed.</li>
+<li>The genes are then ranked by decreasing variance.  That is, the most variable genes are "at the top"</li>
+<li>Then the top "Skip genes" are ignored.</li>
+<li>And the next "Num genes" are selected.</li>
+<li>These selected genes are used to compute an MDS (or PCA) plot</li>
+</ul>
+<h3 id="configuring-a-degust-session-programmatically">Configuring a Degust session programmatically</h3>
+<p>First upload your count matrix, and note the special code created in the url.  eg. <code>73fb85e4625f5bdd08cfeb3b9fc7a7f2</code></p>
+<p>You may download the settings in a json format.  Note here the use of the <a href="https://stedolan.github.io/jq/">jq</a> tool, this isn't necessary but it does make for nicer formatting of the json.</p>
+<pre><code>curl 'http://degust.erc.monash.edu/degust/73fb85e4625f5bdd08cfeb3b9fc7a7f2/settings' | jq '.settings' &gt; foo.json
+</code></pre>
+<p>You can now edit the file <code>foo.json</code> to change any settings.  To save you changes you POST it back to the server:</p>
+<pre><code>curl 'http://degust.erc.monash.edu/degust/73fb85e4625f5bdd08cfeb3b9fc7a7f2/settings' -F 'settings=&lt;foo.json'
+</code></pre>
+<p>Example json settings below.   Important parts:
+  * <code>csv_format</code> specifies the format of your uploaded file, true for csv, or false for tsv
+  * <code>info_columns</code> are the names of columns from your csv file
+  * <code>name</code> the name of the degust session
+  * <code>replicates</code> An array of conditions.  Each condition is an array with the first entry as your chosen name for a condition, and the second entry is an array of the column names of the replicates from your file.
+  * <code>init_select</code> the condition names from the <code>replicates</code> array that specify the conditions to select on page log
+  * <code>hidden_factor</code> the condition names from the <code>replicates</code> array that specifies linear model terms for batch effects
+  * <code>analyze_server_side</code> use true if you upload counts, false if you upload analysis results for visualisation in degust</p>
+<pre><code class="json">{
+  &quot;min_cpm_samples&quot;: 5,
+  &quot;min_cpm&quot;: 1,
+  &quot;hidden_factor&quot;: [],
+  &quot;init_select&quot;: [
+    &quot;cdhR&quot;,
+    &quot;GppX&quot;,
+    &quot;luxS&quot;,
+    &quot;wt&quot;
+  ],
+  &quot;name&quot;: &quot;Public Example&quot;,
+  &quot;analyze_server_side&quot;: true,
+  &quot;info_columns&quot;: [
+    &quot;Feature&quot;,
+    &quot;gene&quot;,
+    &quot;product&quot;
+  ],
+  &quot;replicates&quot;: [
+    [
+      &quot;cdhR&quot;,
+      [
+        &quot;cdhR-rep1&quot;,
+        &quot;cdhR-rep2&quot;
+      ]
+    ],
+    [
+      &quot;GppX&quot;,
+      [
+        &quot;GppX-rep1&quot;,
+        &quot;GppX-rep2&quot;
+      ]
+    ],
+    [
+      &quot;luxS&quot;,
+      [
+        &quot;luxS-rep1&quot;,
+        &quot;luxS-rep2&quot;,
+        &quot;luxS-rep3&quot;
+      ]
+    ],
+    [
+      &quot;wt&quot;,
+      [
+        &quot;wt-rep1&quot;,
+        &quot;wt-rep2&quot;,
+        &quot;wt-rep3&quot;
+      ]
+    ]
+  ],
+  &quot;csv_format&quot;: true,
+}
+</code></pre>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="../devfeatures/" class="btn btn-neutral" title="Dev Features"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+      
+        <span><a href="../devfeatures/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+    </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/require.js"></script>
+      <script src="../search/search.js"></script>
+
+</body>
+</html>

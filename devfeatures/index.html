@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>Dev Features - Degust User Manual</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="../css/highlight.css">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Dev Features";
+    var mkdocs_page_input_path = "devfeatures.md";
+    var mkdocs_page_url = "/devfeatures/";
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js"></script>
+  <script src="../js/modernizr-2.8.3.min.js"></script>
+  <script type="text/javascript" src="../js/highlight.pack.js"></script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> Degust User Manual</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="..">Home</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../quickstart/">QuickStart</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../visualisations/">Visualisations</a>
+	    </li>
+          
+            <li class="toctree-l1 current">
+		
+    <a class="current" href="./">Dev Features</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l2"><a href="#new-features-frontend">New Features: Frontend</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l3" href="#general">General</a></li>
+        
+        </ul>
+    
+
+    <li class="toctree-l2"><a href="#proteomics">Proteomics</a></li>
+    
+
+    <li class="toctree-l2"><a href="#rnaseq">RNASeq</a></li>
+    
+
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../faq/">FAQ</a>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">Degust User Manual</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>Dev Features</li>
+    <li class="wy-breadcrumbs-aside">
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h3 id="new-features-frontend">New Features: Frontend</h3>
+<p><sup> This list is not comprehensive and some features may not yet be live (but are implemented)</sup>    </p>
+<h4 id="general">General</h4>
+<ul>
+<li>Dev version added. This can be accessed from the <code>Your data</code> page and clicking the drop down arrow and then clicking <code>View with dev</code>. 
+    <p align="center">
+    <img width="220" height="200" src="https://i.imgur.com/fn7F6Ob.png">
+    </p>    <ul>
+<li>Clicking <code>View</code> will show the stable version of Degust - "Degust Classic" (3.1.0)</li>
+</ul>
+</li>
+</ul>
+<h1 id="_1"></h1>
+<ul>
+<li>UI update:<ul>
+<li>Gene Strip Chart has been made more prominent by having it always visible on the right</li>
+<li>Controls and options shifted to left side</li>
+<li>Degust is wider to make better use of wide screens   </li>
+</ul>
+</li>
+</ul>
+<h1 id="_2"></h1>
+<ul>
+<li>Contrasts can be used to test interactions between groups of conditions: <ul>
+<li>These are set on the configure page</li>
+</ul>
+</li>
+</ul>
+<h1 id="_3"></h1>
+<ul>
+<li>3D MDS plot images can be saved: <ul>
+<li>MDS plots can have the level of moderation modified</li>
+</ul>
+</li>
+</ul>
+<h1 id="_4"></h1>
+<ul>
+<li>Experiment descriptions can now be added on the configure page<ul>
+<li>These can be viewed by hovering on or clicking <code>Show Description</code></li>
+</ul>
+</li>
+</ul>
+<h1 id="_5"></h1>
+<ul>
+<li>Datasets can now be copied, meaning that users can copy a shared and locked dataset</li>
+</ul>
+<h1 id="_6"></h1>
+<ul>
+<li>Datasets can also now be deleted from the config page</li>
+</ul>
+<h1 id="_7"></h1>
+<ul>
+<li>Gene filter added: <ul>
+<li>A gene filter can be applied to the dataset by clicking the <code>Create Filter</code> button</li>
+<li>Adding a filter is done by adding a list of delimited genes to the text box.</li>
+<li>Filter checks for exact match from entries in </li>
+<li>Unlike the Gene Table searchbox this will filter all plots and tables</li>
+</ul>
+</li>
+</ul>
+<h1 id="_8"></h1>
+<ul>
+<li>Gene table searchbox is searchable by keywords:<ul>
+<li>More than one search term can be used</li>
+<li>Terms are delimited by commas</li>
+<li>Gene Table will search through the provided "Info columns" set on the configure page</li>
+<li>Note that this does not filter the genes shown in plots and only filters the gene table for this functionality please use the provided gene filter</li>
+</ul>
+</li>
+</ul>
+<h1 id="_9"></h1>
+<ul>
+<li>Gene table's columns can be shown/hidden from context menu accessable from cog icon<ul>
+<li>At least one column must be shown</li>
+</ul>
+</li>
+</ul>
+<h4 id="proteomics">Proteomics</h4>
+<ul>
+<li>
+<p>Degust is now able to support the maxQuant format for proteomics. </p>
+<ul>
+<li>Proteomics datasets have their own set of QC plots<ul>
+<li>CV-histogram</li>
+<li>Intensity Histogram (Also shows imputed proportions)</li>
+<li>etc.</li>
+</ul>
+</li>
+<li>Intensities can be imputed and the values normalised with limma for DE proteins<ul>
+<li>Threshold to keep values can be modified from the configure page</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>Gene Table is able to query Uniprot for ID lookup for more information</p>
+</li>
+</ul>
+<h4 id="rnaseq">RNASeq</h4>
+<ul>
+<li>RLE box and whisker QC plot added</li>
+<li><code>View SampleWeights</code> has been replaced with <code>View Extra Information</code> which provides information related to normalisation not usually needed.</li>
+</ul>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../faq/" class="btn btn-neutral float-right" title="FAQ">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../visualisations/" class="btn btn-neutral" title="Visualisations"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+      
+        <span><a href="../visualisations/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../faq/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/require.js"></script>
+      <script src="../search/search.js"></script>
+
+</body>
+</html>

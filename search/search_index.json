@@ -1,0 +1,114 @@
+{
+    "docs": [
+        {
+            "location": "/",
+            "text": "Degust\n User Manual\n\n\nTake the time to digest and appreciate your Differential Gene Expression data\n\n\nFind Degust \nhere\n.\n\n\nAbout Degust\n\n\nDegust is a tool for the visualisation and exploration of RNASeq and Proteomics data. \n\nOnce uploaded, Degust can perform DGE analysis and visualise the results.",
+            "title": "Home"
+        },
+        {
+            "location": "/#degust-user-manual",
+            "text": "Take the time to digest and appreciate your Differential Gene Expression data  Find Degust  here .",
+            "title": "Degust User Manual"
+        },
+        {
+            "location": "/#about-degust",
+            "text": "Degust is a tool for the visualisation and exploration of RNASeq and Proteomics data.  \nOnce uploaded, Degust can perform DGE analysis and visualise the results.",
+            "title": "About Degust"
+        },
+        {
+            "location": "/quickstart/",
+            "text": "Quickstart Guide\n\n\nThere are three alternative ways to use Degust. Briefly, these are:\n\n\n\n\nUpload a CSV of counts per gene to our public server.\n\n\nDo your own analysis, and upload a CSV of your analysis to our public server.\n\n\nDo your own analysis and create a single HTML file to view and share using degust.py.  \n\n\n\n\nYou can check out examples of projects in Degust to see how its done \nhere\n.\n\n\nUse Degust with per gene read counts\n\n\nCreate your CSV file with read counts per gene - the CSV file requirements are documented on the upload page. You'll then be directed to web page to specify the columns of your CSV including which samples are replicates. The back-end will then analyse your data using voom/limma, and you can visualise the results with Degust.\n\n\nUsing Degust in this manner has the advantage that you can select, within Degust, the conditions you wish to compare. That is, the selected 2 samples and a moderated t-test is performed for each gene. Select 3 or more samples and a moderated F-test is used.\n\n\nUse Degust with pre-analysed data\n\n\nPerform your own differential expression analysis and produce a CSV file of your results - the CSV file requirements are documented on the upload page. You can then specify which columns are which, and visualise your results with Degust.\n\n\nUse Degust as a single HTML\n\n\nPerform your own differential expression analysis and produce a CSV file of your results. You then use a python script, degust.py, to embed your CSV file in an HTML file that can be directly loaded by in browser.",
+            "title": "QuickStart"
+        },
+        {
+            "location": "/quickstart/#quickstart-guide",
+            "text": "There are three alternative ways to use Degust. Briefly, these are:   Upload a CSV of counts per gene to our public server.  Do your own analysis, and upload a CSV of your analysis to our public server.  Do your own analysis and create a single HTML file to view and share using degust.py.     You can check out examples of projects in Degust to see how its done  here .",
+            "title": "Quickstart Guide"
+        },
+        {
+            "location": "/quickstart/#use-degust-with-per-gene-read-counts",
+            "text": "Create your CSV file with read counts per gene - the CSV file requirements are documented on the upload page. You'll then be directed to web page to specify the columns of your CSV including which samples are replicates. The back-end will then analyse your data using voom/limma, and you can visualise the results with Degust.  Using Degust in this manner has the advantage that you can select, within Degust, the conditions you wish to compare. That is, the selected 2 samples and a moderated t-test is performed for each gene. Select 3 or more samples and a moderated F-test is used.",
+            "title": "Use Degust with per gene read counts"
+        },
+        {
+            "location": "/quickstart/#use-degust-with-pre-analysed-data",
+            "text": "Perform your own differential expression analysis and produce a CSV file of your results - the CSV file requirements are documented on the upload page. You can then specify which columns are which, and visualise your results with Degust.",
+            "title": "Use Degust with pre-analysed data"
+        },
+        {
+            "location": "/quickstart/#use-degust-as-a-single-html",
+            "text": "Perform your own differential expression analysis and produce a CSV file of your results. You then use a python script, degust.py, to embed your CSV file in an HTML file that can be directly loaded by in browser.",
+            "title": "Use Degust as a single HTML"
+        },
+        {
+            "location": "/visualisations/",
+            "text": "Visualisations available:\n\n\nParallel Coordinates Plot:",
+            "title": "Visualisations"
+        },
+        {
+            "location": "/visualisations/#visualisations-available",
+            "text": "Parallel Coordinates Plot:",
+            "title": "Visualisations available:"
+        },
+        {
+            "location": "/devfeatures/",
+            "text": "New Features: Frontend\n\n\n This list is not comprehensive and some features may not yet be live (but are implemented)\n    \n\n\nGeneral\n\n\n\n\nDev version added. This can be accessed from the \nYour data\n page and clicking the drop down arrow and then clicking \nView with dev\n. \n    \n\n    \n\n    \n    \n\n\nClicking \nView\n will show the stable version of Degust - \"Degust Classic\" (3.1.0)\n\n\n\n\n\n\n\n\n\n\n\n\nUI update:\n\n\nGene Strip Chart has been made more prominent by having it always visible on the right\n\n\nControls and options shifted to left side\n\n\nDegust is wider to make better use of wide screens   \n\n\n\n\n\n\n\n\n\n\n\n\nContrasts can be used to test interactions between groups of conditions: \n\n\nThese are set on the configure page\n\n\n\n\n\n\n\n\n\n\n\n\n3D MDS plot images can be saved: \n\n\nMDS plots can have the level of moderation modified\n\n\n\n\n\n\n\n\n\n\n\n\nExperiment descriptions can now be added on the configure page\n\n\nThese can be viewed by hovering on or clicking \nShow Description\n\n\n\n\n\n\n\n\n\n\n\n\nDatasets can now be copied, meaning that users can copy a shared and locked dataset\n\n\n\n\n\n\n\n\nDatasets can also now be deleted from the config page\n\n\n\n\n\n\n\n\nGene filter added: \n\n\nA gene filter can be applied to the dataset by clicking the \nCreate Filter\n button\n\n\nAdding a filter is done by adding a list of delimited genes to the text box.\n\n\nFilter checks for exact match from entries in \n\n\nUnlike the Gene Table searchbox this will filter all plots and tables\n\n\n\n\n\n\n\n\n\n\n\n\nGene table searchbox is searchable by keywords:\n\n\nMore than one search term can be used\n\n\nTerms are delimited by commas\n\n\nGene Table will search through the provided \"Info columns\" set on the configure page\n\n\nNote that this does not filter the genes shown in plots and only filters the gene table for this functionality please use the provided gene filter\n\n\n\n\n\n\n\n\n\n\n\n\nGene table's columns can be shown/hidden from context menu accessable from cog icon\n\n\nAt least one column must be shown\n\n\n\n\n\n\n\n\nProteomics\n\n\n\n\n\n\nDegust is now able to support the maxQuant format for proteomics. \n\n\n\n\nProteomics datasets have their own set of QC plots\n\n\nCV-histogram\n\n\nIntensity Histogram (Also shows imputed proportions)\n\n\netc.\n\n\n\n\n\n\nIntensities can be imputed and the values normalised with limma for DE proteins\n\n\nThreshold to keep values can be modified from the configure page\n\n\n\n\n\n\n\n\n\n\n\n\nGene Table is able to query Uniprot for ID lookup for more information\n\n\n\n\n\n\nRNASeq\n\n\n\n\nRLE box and whisker QC plot added\n\n\nView SampleWeights\n has been replaced with \nView Extra Information\n which provides information related to normalisation not usually needed.",
+            "title": "Dev Features"
+        },
+        {
+            "location": "/devfeatures/#new-features-frontend",
+            "text": "This list is not comprehensive and some features may not yet be live (but are implemented)",
+            "title": "New Features: Frontend"
+        },
+        {
+            "location": "/devfeatures/#general",
+            "text": "Dev version added. This can be accessed from the  Your data  page and clicking the drop down arrow and then clicking  View with dev . \n     \n     \n           Clicking  View  will show the stable version of Degust - \"Degust Classic\" (3.1.0)",
+            "title": "General"
+        },
+        {
+            "location": "/devfeatures/#proteomics",
+            "text": "Degust is now able to support the maxQuant format for proteomics.    Proteomics datasets have their own set of QC plots  CV-histogram  Intensity Histogram (Also shows imputed proportions)  etc.    Intensities can be imputed and the values normalised with limma for DE proteins  Threshold to keep values can be modified from the configure page       Gene Table is able to query Uniprot for ID lookup for more information",
+            "title": "Proteomics"
+        },
+        {
+            "location": "/devfeatures/#rnaseq",
+            "text": "RLE box and whisker QC plot added  View SampleWeights  has been replaced with  View Extra Information  which provides information related to normalisation not usually needed.",
+            "title": "RNASeq"
+        },
+        {
+            "location": "/faq/",
+            "text": "FAQ\n\n\nHow can a gene have zero counts for all samples but has a non-zero fold-change?\n\n\nThis can happen when using the backend of Degust.  Degust uses voom (or edgeR) to perform the expression analysis.  Voom adds a small constant (0.5), to each count, normalizes for library size, then takes the log.  This means when you have a count of 0 across all samples, but different library sizes, it is possible to compute a non-zero fold-change.\n\n\nWe recommend setting \nMin read count\n on the configuration page to a small value, say 10.\n\n\nWhat is the \nMin read count\n setting?\n\n\nThis is the minimum number of reads required in at least one sample to keep the gene in the analysis.  That is, a given gene is omitted if the number of reads across all samples is below this setting.\n\n\nI don't see an option to display an MDS plot\n\n\nThe MDS plot is only available when you have included \"count\" columns\n\n\nHow is the MDS plot calculated\n\n\n\n\nFirst genes that don't pass the \"FDR cut-off\" or \"abs log FC\" filters are ignored.  Using these filters is \"cheating\" when doing an MDS plot to look at replicate clustering\n\n\nThe remaining genes have the counts for each replicate log-transformed.\n\n\nThe genes are then ranked by decreasing variance.  That is, the most variable genes are \"at the top\"\n\n\nThen the top \"Skip genes\" are ignored.\n\n\nAnd the next \"Num genes\" are selected.\n\n\nThese selected genes are used to compute an MDS (or PCA) plot\n\n\n\n\nConfiguring a Degust session programmatically\n\n\nFirst upload your count matrix, and note the special code created in the url.  eg. \n73fb85e4625f5bdd08cfeb3b9fc7a7f2\n\n\nYou may download the settings in a json format.  Note here the use of the \njq\n tool, this isn't necessary but it does make for nicer formatting of the json.\n\n\ncurl 'http://degust.erc.monash.edu/degust/73fb85e4625f5bdd08cfeb3b9fc7a7f2/settings' | jq '.settings' > foo.json\n\n\n\nYou can now edit the file \nfoo.json\n to change any settings.  To save you changes you POST it back to the server:\n\n\ncurl 'http://degust.erc.monash.edu/degust/73fb85e4625f5bdd08cfeb3b9fc7a7f2/settings' -F 'settings=<foo.json'\n\n\n\nExample json settings below.   Important parts:\n  * \ncsv_format\n specifies the format of your uploaded file, true for csv, or false for tsv\n  * \ninfo_columns\n are the names of columns from your csv file\n  * \nname\n the name of the degust session\n  * \nreplicates\n An array of conditions.  Each condition is an array with the first entry as your chosen name for a condition, and the second entry is an array of the column names of the replicates from your file.\n  * \ninit_select\n the condition names from the \nreplicates\n array that specify the conditions to select on page log\n  * \nhidden_factor\n the condition names from the \nreplicates\n array that specifies linear model terms for batch effects\n  * \nanalyze_server_side\n use true if you upload counts, false if you upload analysis results for visualisation in degust\n\n\n{\n  \"min_cpm_samples\": 5,\n  \"min_cpm\": 1,\n  \"hidden_factor\": [],\n  \"init_select\": [\n    \"cdhR\",\n    \"GppX\",\n    \"luxS\",\n    \"wt\"\n  ],\n  \"name\": \"Public Example\",\n  \"analyze_server_side\": true,\n  \"info_columns\": [\n    \"Feature\",\n    \"gene\",\n    \"product\"\n  ],\n  \"replicates\": [\n    [\n      \"cdhR\",\n      [\n        \"cdhR-rep1\",\n        \"cdhR-rep2\"\n      ]\n    ],\n    [\n      \"GppX\",\n      [\n        \"GppX-rep1\",\n        \"GppX-rep2\"\n      ]\n    ],\n    [\n      \"luxS\",\n      [\n        \"luxS-rep1\",\n        \"luxS-rep2\",\n        \"luxS-rep3\"\n      ]\n    ],\n    [\n      \"wt\",\n      [\n        \"wt-rep1\",\n        \"wt-rep2\",\n        \"wt-rep3\"\n      ]\n    ]\n  ],\n  \"csv_format\": true,\n}",
+            "title": "FAQ"
+        },
+        {
+            "location": "/faq/#faq",
+            "text": "",
+            "title": "FAQ"
+        },
+        {
+            "location": "/faq/#how-can-a-gene-have-zero-counts-for-all-samples-but-has-a-non-zero-fold-change",
+            "text": "This can happen when using the backend of Degust.  Degust uses voom (or edgeR) to perform the expression analysis.  Voom adds a small constant (0.5), to each count, normalizes for library size, then takes the log.  This means when you have a count of 0 across all samples, but different library sizes, it is possible to compute a non-zero fold-change.  We recommend setting  Min read count  on the configuration page to a small value, say 10.",
+            "title": "How can a gene have zero counts for all samples but has a non-zero fold-change?"
+        },
+        {
+            "location": "/faq/#what-is-the-min-read-count-setting",
+            "text": "This is the minimum number of reads required in at least one sample to keep the gene in the analysis.  That is, a given gene is omitted if the number of reads across all samples is below this setting.",
+            "title": "What is the Min read count setting?"
+        },
+        {
+            "location": "/faq/#i-dont-see-an-option-to-display-an-mds-plot",
+            "text": "The MDS plot is only available when you have included \"count\" columns",
+            "title": "I don't see an option to display an MDS plot"
+        },
+        {
+            "location": "/faq/#how-is-the-mds-plot-calculated",
+            "text": "First genes that don't pass the \"FDR cut-off\" or \"abs log FC\" filters are ignored.  Using these filters is \"cheating\" when doing an MDS plot to look at replicate clustering  The remaining genes have the counts for each replicate log-transformed.  The genes are then ranked by decreasing variance.  That is, the most variable genes are \"at the top\"  Then the top \"Skip genes\" are ignored.  And the next \"Num genes\" are selected.  These selected genes are used to compute an MDS (or PCA) plot",
+            "title": "How is the MDS plot calculated"
+        },
+        {
+            "location": "/faq/#configuring-a-degust-session-programmatically",
+            "text": "First upload your count matrix, and note the special code created in the url.  eg.  73fb85e4625f5bdd08cfeb3b9fc7a7f2  You may download the settings in a json format.  Note here the use of the  jq  tool, this isn't necessary but it does make for nicer formatting of the json.  curl 'http://degust.erc.monash.edu/degust/73fb85e4625f5bdd08cfeb3b9fc7a7f2/settings' | jq '.settings' > foo.json  You can now edit the file  foo.json  to change any settings.  To save you changes you POST it back to the server:  curl 'http://degust.erc.monash.edu/degust/73fb85e4625f5bdd08cfeb3b9fc7a7f2/settings' -F 'settings=<foo.json'  Example json settings below.   Important parts:\n  *  csv_format  specifies the format of your uploaded file, true for csv, or false for tsv\n  *  info_columns  are the names of columns from your csv file\n  *  name  the name of the degust session\n  *  replicates  An array of conditions.  Each condition is an array with the first entry as your chosen name for a condition, and the second entry is an array of the column names of the replicates from your file.\n  *  init_select  the condition names from the  replicates  array that specify the conditions to select on page log\n  *  hidden_factor  the condition names from the  replicates  array that specifies linear model terms for batch effects\n  *  analyze_server_side  use true if you upload counts, false if you upload analysis results for visualisation in degust  {\n  \"min_cpm_samples\": 5,\n  \"min_cpm\": 1,\n  \"hidden_factor\": [],\n  \"init_select\": [\n    \"cdhR\",\n    \"GppX\",\n    \"luxS\",\n    \"wt\"\n  ],\n  \"name\": \"Public Example\",\n  \"analyze_server_side\": true,\n  \"info_columns\": [\n    \"Feature\",\n    \"gene\",\n    \"product\"\n  ],\n  \"replicates\": [\n    [\n      \"cdhR\",\n      [\n        \"cdhR-rep1\",\n        \"cdhR-rep2\"\n      ]\n    ],\n    [\n      \"GppX\",\n      [\n        \"GppX-rep1\",\n        \"GppX-rep2\"\n      ]\n    ],\n    [\n      \"luxS\",\n      [\n        \"luxS-rep1\",\n        \"luxS-rep2\",\n        \"luxS-rep3\"\n      ]\n    ],\n    [\n      \"wt\",\n      [\n        \"wt-rep1\",\n        \"wt-rep2\",\n        \"wt-rep3\"\n      ]\n    ]\n  ],\n  \"csv_format\": true,\n}",
+            "title": "Configuring a Degust session programmatically"
+        }
+    ]
+}
