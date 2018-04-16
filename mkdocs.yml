@@ -1,0 +1,8 @@
+site_name: Degust User Manual
+theme: readthedocs
+pages: 
+    - Home: index.md
+    - QuickStart: quickstart.md
+    - Visualisations: visualisations.md
+    - Dev Features: devfeatures.md
+    - FAQ: faq.md
