@@ -61,7 +61,14 @@ class BarcodePlot
 
         this.redraw()
 
+    #returns the appropriate redraw function for double/single plots
     redraw: () ->
+        if this.opts.double
+            this.redraw_double()
+        else
+            this.redraw_single()
+
+    redraw_single: () ->
         if !this.data
             return
 
@@ -90,16 +97,20 @@ class BarcodePlot
         rect_new = rects.enter().append("g")
             .attr('class', 'rect')
 
-            rect_new.append('rect')
+        rect_new.append('rect')
                 .attr('x',(d) => xScale(x_val(d)))
                 .attr('y', 0)
                 .style('fill', 'blue')
-                .attr('height', 90)
+                .attr('height', 75)
                 .attr('width', 1)
 
         rects.select('rect')
-            .attr('height', 90)
+            .attr('height', 75)
             .attr('width', 1)
+
+    #Need to develp more genesets FIRST
+    redraw_double: () ->
+        this.redraw_single()
 
     reFilter: () ->
         if !this.data
@@ -132,14 +143,15 @@ module.exports =
         filter:
             default: null
         filterChanged: null
-
+        double:
+            default: false
 
     computed:
         barcodeCol: () ->
             col = this.plotCols
             # rank by this.plotCols * P value (Close/same as t-statistic)
-            this.data.sort((a,b) => a[col[1].idx]*a["P.Value"] - b[col[1].idx]*b["P.Value"])
-            # this.data.sort((a,b) => a[col[1].idx] - b[col[1].idx])
+            # this.data.sort((a,b) => a[col[1].idx]*a["P.Value"] - b[col[1].idx]*b["P.Value"])
+            this.data.sort((a,b) => a[col[1].idx] - b[col[1].idx])
 
             this.data.forEach((e,i,a) -> e.rank = i)
             if col?
@@ -160,7 +172,6 @@ module.exports =
         needsUpdate: () ->
             this.update()
         filterChanged: () ->
-            console.log('filter changed')
             this.reFilter()
 
     methods:
@@ -187,6 +198,7 @@ module.exports =
             margin_t: this.marginT
             axis_label_inside: this.axisLabelInside
             filter: this.filter
+            double: this.double
         )
         this.update()
 </script>

@@ -132,7 +132,8 @@
 
               <div v-tooltip="tip('Filter page to genes in this list')">
                 <label>Gene list</label>
-                <a @click='showGeneList=true'>{{(filter_gene_list.length == 0) ? "Create Filter" : "List Size: " + filter_gene_list.length }}</a>
+                  <a @click='showGeneList=true'>{{(filter_gene_list.length == 0) ? "Create Filter" : "List Size: " + filter_gene_list.length }}</a>
+                  <a style='float:right;' v-if='filter_gene_list.length > 0' @click='use_gene_filter=!use_gene_filter'>Toggle Filter {{use_gene_filter? ' off' : ' on'}}</a>
               </div>
 
               <div v-tooltip="tip('Show FC from selected condition')">
@@ -324,6 +325,7 @@
                   :colour='plot_colouring'
                   :plot-cols='fc_calc_columns'
                   :filter='expr_filter'
+                  :filter-two='null'
                   :filter-changed='filter_changed'
                   :gene-set='filter_gene_list'
                   :double='false'>

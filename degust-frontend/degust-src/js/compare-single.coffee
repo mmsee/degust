@@ -109,6 +109,7 @@ module.exports =
         show_hoverDesc: false
         show_ModalExperimentDesc: false
         descTooltipLoc: [0,0]
+        use_gene_filter: true
         #colour_by_condition: null  # Don't want to track changes to this!
 
     computed:
@@ -151,6 +152,7 @@ module.exports =
             this.fdrThreshold
             this.fcThreshold
             this.filter_gene_list_cache
+            this.use_gene_filter
             Date.now()
         need_renormalization: () ->
             this.normalization
@@ -367,7 +369,7 @@ module.exports =
                     return false
 
             # Filter by genes in filter_gene_list
-            if this.filter_gene_list.length > 0
+            if this.filter_gene_list.length > 0 && this.use_gene_filter
                 info_cols = this.gene_data.columns_by_type('info').map((c) -> row[c.idx])
                 matching = info_cols.filter((col) =>
                     col.toLowerCase() of this.filter_gene_list_cache
