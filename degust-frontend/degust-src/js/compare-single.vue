@@ -254,6 +254,9 @@
               <li :class='{active: cur_plot=="volcano"}'>
                   <a @click='cur_plot="volcano"'>Volcano</a>
               </li>
+              <li :class='{active: cur_plot=="barcode"}'>
+                  <a @click='cur_plot="barcode"'>Barcode</a>
+              </li>
             </ul>
             <div v-bind:style="{ opacity: num_loading>0 ? 0.4 : 1 }">
                 <parallel-coord v-if='cur_plot=="parcoords"'
@@ -312,6 +315,20 @@
                         @dimension='v => mdsDimension = v'
                         >
                 </mds-plot>
+                <div v-if='cur_plot=="barcode" && filter_gene_list.length == 0'>
+                  <h4>Please enter a gene filter/set/group/thing</h4>
+                </div>
+                <barcode-plot v-else-if='cur_plot=="barcode"'
+                  :name='experimentName+" - "+"barcode"'
+                  :data='gene_data_rows'
+                  :colour='plot_colouring'
+                  :plot-cols='fc_calc_columns'
+                  :filter='expr_filter'
+                  :filter-changed='filter_changed'
+                  :gene-set='filter_gene_list'
+                  :double='false'>
+                </barcode-plot>
+
               </div>
             </div><!-- expression -->
 

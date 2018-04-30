@@ -23,6 +23,7 @@ qcPlots = require('./qc-plots.vue').default
 geneStripchart = require('./gene-stripchart.vue').default
 parallelCoord = require('./parcoords.vue').default
 heatmap = require('./heatmap.vue').default
+barcodePlot = require('./barcodeplot.vue').default
 { Normalize } = require('./normalize.coffee')
 { GeneData } = require('./gene_data.coffee')
 
@@ -56,6 +57,7 @@ module.exports =
         geneStripchart: geneStripchart
         parallelCoord: parallelCoord
         heatmap: heatmap
+        barcodePlot: barcodePlot
     data: () ->
         code: null
         settings: {}
