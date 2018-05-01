@@ -115,7 +115,6 @@ class BarcodePlot
     reFilter: () ->
         if !this.data
             return
-        console.log("Refiltering")
         this.redraw()
 
     update_data: (@data, @barcodeCol, @colouring) ->
@@ -188,7 +187,6 @@ module.exports =
             elem: this.$refs.barcode
             name: this.name
             colouring: this.colour
-            filter: this.filter
             brush_enable: this.brushEnable
             animate: this.animate
             text: this.text

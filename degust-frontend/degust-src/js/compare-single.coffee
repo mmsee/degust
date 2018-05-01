@@ -89,7 +89,8 @@ module.exports =
         dge_methods: []
         qc_plots: []
         showGeneList: false
-        filter_gene_list: []
+        filter_gene_lists: []
+        cur_gene_list: 0
         sel_conditions: []             # Array of condition names currently selected to compare
         sel_contrast: null             # Contrast if selected.  Hash with name, and columns
         cur_plot: null
@@ -165,8 +166,10 @@ module.exports =
                 heatmap_dims = this.normalizationColumns
             heatmap_dims
         filter_gene_list_cache: () ->
+            if this.filter_gene_lists.length == 0
+                return
             res = {}
-            this.filter_gene_list.forEach((val) -> res[val] = val)
+            this.filter_gene_lists[this.cur_gene_list].get_members().forEach((val) -> res[val] = val)
             res
 
         #Added to show/hide counts/intensity
@@ -354,9 +357,14 @@ module.exports =
             n = Number(v)
             !(isNaN(n) || n<=0)
 
-        filterList: (value) ->
-            this.filter_gene_list = value
-            value
+        submitList: (list) ->
+            this.filter_gene_lists = list
+            this.settings.userGeneList = list
+            #AJAX request via JQuery
+            debugger
+            this.save()
+        changedCurList: (index) ->
+            this.cur_gene_list = index
 
         # Check if the passed row passes filters for : FDR, FC, Kegg, Filter List
         expr_filter: (row)   ->
@@ -369,7 +377,7 @@ module.exports =
                     return false
 
             # Filter by genes in filter_gene_list
-            if this.filter_gene_list.length > 0 && this.use_gene_filter
+            if this.filter_gene_lists.length > 0 && this.use_gene_filter
                 info_cols = this.gene_data.columns_by_type('info').map((c) -> row[c.idx])
                 matching = info_cols.filter((col) =>
                     col.toLowerCase() of this.filter_gene_list_cache
