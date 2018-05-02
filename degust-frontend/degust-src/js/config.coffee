@@ -259,7 +259,6 @@ module.exports =
             this.modal.reload_on_close=false
 
             to_send = to_server_model(this.settings)
-            debugger
             $.ajax(
                 type: "POST"
                 url: this.script("settings")
