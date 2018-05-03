@@ -244,7 +244,6 @@ module.exports =
                         this.settings.input_type = if this.settings.analyze_server_side then 'counts' else 'preanalysed'
 
                     this.load_success=true
-                    console.log(this.settings)
                     this.$nextTick(() -> this.initBackend(true))
                  ).fail((x) =>
                     log_error "Failed to get settings!",x

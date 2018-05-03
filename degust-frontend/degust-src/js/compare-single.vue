@@ -329,8 +329,8 @@
                   :filter='expr_filter'
                   :filter-two='null'
                   :filter-changed='filter_changed'
-
-                  :double='false'>
+                  :double='false'
+                  >
                   <!-- :gene-set='user_gene_list' -->
                 </barcode-plot>
 

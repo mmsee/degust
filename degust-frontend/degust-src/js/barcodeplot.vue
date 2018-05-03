@@ -48,7 +48,11 @@ class BarcodePlot
         this.svg = this.elem.append('svg')
         this.gRect = this.svg
 
+        # this.gRect.on('mousemove', () => this._mousemove())
+        # this.gRect.on('mouseout', () => this._mouseout())
+
         #If brush - Initialise it here - No brush support yet
+        this.dispatch = d3.dispatch('mouseover', 'mouseout')
 
         #This calls the resize which calls the redraw
         this.resize()
@@ -97,16 +101,46 @@ class BarcodePlot
         rect_new = rects.enter().append("g")
             .attr('class', 'rect')
 
+
         rect_new.append('rect')
                 .attr('x',(d) => xScale(x_val(d)))
-                .attr('y', 0)
+                .attr('y', 75)
                 .style('fill', 'blue')
-                .attr('height', 75)
-                .attr('width', 1)
+                .attr('height', 100)
+                .attr('width', 2)
+                .on('mouseover', (d, loc) ->
+                    d3.select(this)
+                        .transition().duration(20)
+                        .ease('linear')
+                        .attr('y',50)
+                        .attr('height', 100)
+                        .attr('width', 3)
+                        .style('fill', 'red')
+                )
+                .on('mouseout', (d, loc) ->
+                    d3.select(this)
+                        .transition().duration(100)
+                        .ease('linear')
+                        .attr('y', 75)
+                        .attr('height', 75)
+                        .attr('width', 1)
+                        .style('fill', 'blue')
+                )
 
         rects.select('rect')
             .attr('height', 75)
             .attr('width', 1)
+
+        # this.gRect.on('mouseover', (d, loc) ->
+        #     d3.select(this)
+        #         .transition().duration(100)
+        #         .attr('height', 100)
+        #     debugger
+        #     x = d.x
+        #     y = d3.event.pageY
+        #     console.log(this.data.filter((e) => e.id == d.id)[0])
+        #     this.dispatch.mouseover(this.data.map((e) => e.id == d.id)[0], [x,y])
+        # )
 
     #Need to develp more genesets FIRST
     redraw_double: () ->
@@ -149,8 +183,8 @@ module.exports =
         barcodeCol: () ->
             col = this.plotCols
             # rank by this.plotCols * P value (Close/same as t-statistic)
-            # this.data.sort((a,b) => a[col[1].idx]*a["P.Value"] - b[col[1].idx]*b["P.Value"])
-            this.data.sort((a,b) => a[col[1].idx] - b[col[1].idx])
+            this.data.sort((a,b) => a[col[1].idx]*a["P.Value"] - b[col[1].idx]*b["P.Value"])
+            # this.data.sort((a,b) => a[col[1].idx] - b[col[1].idx])
 
             this.data.forEach((e,i,a) -> e.rank = i)
             if col?
