@@ -329,7 +329,11 @@
                   :filter='expr_filter'
                   :filter-two='null'
                   :filter-changed='filter_changed'
+                  :info-cols='info_columns'
                   :double='false'
+                  :highlight='genes_highlight'
+                  @mouseover='v => hover_genes(v)'
+                  @keepHighlight='set_genes_selected'
                   >
                   <!-- :gene-set='user_gene_list' -->
                 </barcode-plot>
@@ -359,7 +363,7 @@
                       :fdrCol='fdr_column'
                       @hide='show_heatmap=false'
                       @show-replicates='v => heatmap_show_replicates=v'
-                      @mousehover='hover_heatmap' @hover-end='stop_hover_heatmap'
+                      @mousehover='hover_genes' @hover-end='stop_hover_genes'
                       @hover-start='v => genes_hover=v'
                       >
               </heatmap>

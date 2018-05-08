@@ -14,11 +14,29 @@
         stroke: #222;
         shape-rendering: crispEdges;
     }
+
+    div >>> barcode-tooltip {
+      /* position: absolute; */
+      /* text-align: left; */
+      font-family: sans-serif;
+      font-size: 11px;
+      pointer-events: none;
+      color: #a6a6a6;
+      opacity: 0;
+  }
+
+    .barcode-div {
+        padding-top: 10px;
+        padding-bottom: 25px;
+
+    }
 </style>
 
 <template>
-    <div class='barcode-div' ref='barcode'>
-
+    <div>
+        <div class='barcode-div' ref='barcode'>
+        </div>
+        <div class='barcode-tooltip'></div>
     </div>
 </template>
 
@@ -33,6 +51,10 @@ class BarcodePlot
         this.opts.xaxis_loc ?= 'zero'
         this.opts.yaxis_loc ?= 'left'
         this.opts.colouring ?= () -> 'blue'
+        this.opts.infoCols ?= ''
+        this.opts.height ?= 200
+        this.data = this.opts.data
+        this.barcodeCol = this.opts.barcodeCol
 
         this.elem = d3.select(this.opts.elem).append('div')
         # this.elem.attr('class'. css.barcode)
@@ -48,12 +70,8 @@ class BarcodePlot
         this.svg = this.elem.append('svg')
         this.gRect = this.svg
 
-        # this.gRect.on('mousemove', () => this._mousemove())
-        # this.gRect.on('mouseout', () => this._mouseout())
-
         #If brush - Initialise it here - No brush support yet
         this.dispatch = d3.dispatch('mouseover', 'mouseout')
-
         #This calls the resize which calls the redraw
         this.resize()
 
@@ -75,8 +93,8 @@ class BarcodePlot
     redraw_single: () ->
         if !this.data
             return
-
-        this.x_val = x_val = (d) => this.barcodeCol.get(d)
+        this.x_val = x_val = (d) =>
+            this.barcodeCol.get(d)
 
         xdomain = d3.extent(this.data, (d) => x_val(d)).map((x) => x)
 
@@ -93,29 +111,47 @@ class BarcodePlot
         # .exit - Remove old
         # .enter - Add new
         kept = this.data.filter((d) => this.opts.filter(d))
-        rects = this.svg.selectAll('.rect')
+        rects = this.svg.selectAll('rect')
                         .data(kept.reverse())
-
         rects.exit().remove()
 
-        rect_new = rects.enter().append("g")
-            .attr('class', 'rect')
+        div = d3.select('.barcode-tooltip')
 
-
-        rect_new.append('rect')
-                .attr('x',(d) => xScale(x_val(d)))
-                .attr('y', 75)
+        rects.enter().append('rect')
                 .style('fill', 'blue')
-                .attr('height', 100)
-                .attr('width', 2)
-                .on('mouseover', (d, loc) ->
-                    d3.select(this)
+                .attr('height', 75)
+                .attr('width', 1)
+                .attr('y', 75)
+
+        #dispatch for hover event
+
+        rects.attr('x',(d) => xScale(x_val(d)))
+                .attr('class', (d) => 'rect' + d.id)
+                .on('mouseover', (d, loc) =>
+                    d3.select('.rect'+d.id)
                         .transition().duration(20)
                         .ease('linear')
                         .attr('y',50)
                         .attr('height', 100)
                         .attr('width', 3)
                         .style('fill', 'red')
+
+                    tooltipText = ''
+                    d.infoCols.forEach((el) =>
+                        tooltipText = tooltipText.concat("<b>"+el.idx+"</b>" + ": " + d[el.idx] + "<br />")
+                    )
+                    div_right = d3.select('.barcode-div').node().getBoundingClientRect().right
+                    #Tooltip width and height
+                    tt_left = xScale(x_val(d)) + 25
+                    tt_width = 225
+                    div.transition(25)
+                        .style('opacity', 1)
+                        .style('position', 'absolute')
+                        .style('min-width', tt_width + 'px')
+                        .style('left', if (d3.select('.rect'+d.id).node().getBoundingClientRect().left + tt_width < div_right) then (tt_left) + 'px' else (tt_left - tt_width) + 'px')
+                        .style("bottom", (175 + (d.infoCols.length + 1) * 11) + "px")
+                    div.html('<span>' + tooltipText+ '</span>')
+                    this.dispatch.mouseover(d)
                 )
                 .on('mouseout', (d, loc) ->
                     d3.select(this)
@@ -125,22 +161,9 @@ class BarcodePlot
                         .attr('height', 75)
                         .attr('width', 1)
                         .style('fill', 'blue')
+                    div.transition(25)
+                        .style('opacity', 0)
                 )
-
-        rects.select('rect')
-            .attr('height', 75)
-            .attr('width', 1)
-
-        # this.gRect.on('mouseover', (d, loc) ->
-        #     d3.select(this)
-        #         .transition().duration(100)
-        #         .attr('height', 100)
-        #     debugger
-        #     x = d.x
-        #     y = d3.event.pageY
-        #     console.log(this.data.filter((e) => e.id == d.id)[0])
-        #     this.dispatch.mouseover(this.data.map((e) => e.id == d.id)[0], [x,y])
-        # )
 
     #Need to develp more genesets FIRST
     redraw_double: () ->
@@ -153,6 +176,32 @@ class BarcodePlot
 
     update_data: (@data, @barcodeCol, @colouring) ->
         this.redraw()
+
+    on: (t,func) ->
+        this.dispatch.on(t, func)
+
+    highlight: (d) ->
+        _reset = () =>
+            this.svg.selectAll('rect')
+                .transition().duration(75)
+                .ease('linear')
+                .attr('y', 75)
+                .attr('height', 75)
+                .attr('width', 1)
+                .style('fill', 'blue')
+
+        if d.length > 0
+            _reset()
+            d3.select('.rect'+d[0].id)
+                .transition().duration(125)
+                .ease('linear')
+                .attr('y', 50)
+                .attr('height', 100)
+                .attr('width', 3)
+                .style('fill', 'red')
+
+        else
+            _reset()
 
 resize = require('./resize-mixin.coffee')
 
@@ -178,46 +227,61 @@ module.exports =
         filterChanged: null
         double:
             default: false
+        infoCols:
+            default: null
+        highlight:
+            default: null
 
     computed:
         barcodeCol: () ->
             col = this.plotCols
             # rank by this.plotCols * P value (Close/same as t-statistic)
-            this.data.sort((a,b) => a[col[1].idx]*a["P.Value"] - b[col[1].idx]*b["P.Value"])
-            # this.data.sort((a,b) => a[col[1].idx] - b[col[1].idx])
+            this.clone_data.sort((a,b) => a[col[1].idx]*a["P.Value"] - b[col[1].idx]*b["P.Value"])
 
-            this.data.forEach((e,i,a) -> e.rank = i)
+            this.clone_data.forEach((e,i,a) =>
+                e.rank = i
+                e.infoCols = this.infoCols
+                )
             if col?
                 # {name: col[1].name, get: (d) -> d[col[1].idx]}
                 {name: col[1].name, get: (d) -> d['rank']}
 
         needsUpdate: () ->
-            this.data
+            this.clone_data
             this.xColumn
             this.yColumn
             this.dimensionScale
             this.colour
             Date.now()
 
-    # data: () ->
+    data: () ->
+        clone_data: []
 
     watch:
         needsUpdate: () ->
             this.update()
         filterChanged: () ->
             this.reFilter()
+        highlight: (d) ->
+            this.me.highlight(d)
 
     methods:
         update:() ->
-            if this.data? && this.barcodeCol?
-                this.me.update_data(this.data,this.barcodeCol,this.colour)
+            if this.clone_data? && this.barcodeCol?
+                this.me.update_data(this.clone_data,this.barcodeCol,this.colour)
         resize: () ->
             this.$nextTick(() => this.me.resize())
         reFilter: () ->
+            this.$emit('keepHighlight', this.clone_data.filter((d) => this.filter(d)), true)
             this.me.reFilter()
 
     mounted: () ->
+        #Clone the data so we can insert a rank ID and InfoCols to the data
+        # object. This is potentially slow.
+        this.clone_data = JSON.parse(JSON.stringify(this.data))
+        this.$emit('keepHighlight', this.clone_data.filter((d) => this.filter(d)), true)
         this.me = new BarcodePlot(
+            data: this.clone_data
             elem: this.$refs.barcode
             name: this.name
             colouring: this.colour
@@ -231,7 +295,11 @@ module.exports =
             axis_label_inside: this.axisLabelInside
             filter: this.filter
             double: this.double
+            infoCols: this.infoCols
+            height: 250
+            barcodeCol: this.barcodeCol
         )
+        this.me.on('mouseover', (d) => this.$emit('mouseover', d))
         this.update()
 </script>
 
