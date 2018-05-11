@@ -117,6 +117,7 @@ class BarcodePlot
 
         div = d3.select('.barcode-tooltip')
 
+        #Append data
         rects.enter().append('rect')
                 .style('fill', 'blue')
                 .attr('height', 75)
@@ -124,7 +125,6 @@ class BarcodePlot
                 .attr('y', 75)
 
         #dispatch for hover event
-
         rects.attr('x',(d) => xScale(x_val(d)))
                 .attr('class', (d) => 'rect' + d.id)
                 .on('mouseover', (d, loc) =>
@@ -153,8 +153,8 @@ class BarcodePlot
                     div.html('<span>' + tooltipText+ '</span>')
                     this.dispatch.mouseover(d)
                 )
-                .on('mouseout', (d, loc) ->
-                    d3.select(this)
+                .on('mouseout', (d, loc) =>
+                    d3.select('.rect'+d.id)
                         .transition().duration(100)
                         .ease('linear')
                         .attr('y', 75)
@@ -164,6 +164,49 @@ class BarcodePlot
                     div.transition(25)
                         .style('opacity', 0)
                 )
+
+        # Append Worm
+        #Generate worm points
+        this.svg.selectAll('path').remove()
+
+        worm_data = this._worm_calc(kept, xdomain)
+
+        lf = d3.svg.line()
+            .x((d) => xScale(d.x))
+            .y((d) => d.y)
+            .interpolate('basis')
+
+        # this.svg.insert('path', 'rect')
+        this.svg.append('path')
+            .attr('stroke', 'steelblue')
+            .attr('fill', 'none')
+            .attr("stroke-width", 1.5)
+            .attr('d', lf(worm_data))
+
+        # Append background
+        #Top & Bottom
+        background_top = 110
+        background_bottom = 150
+        unit_width = xScale(xdomain[1])/5
+        left_edge = xScale(xdomain[0])
+
+        _rectPathStr = (left, right, top, bot) ->
+            return 'M ' + left + ',' + top + ', L ' + left + ',' + bot + ', L ' + right + ',' + bot + ', L ' + right + ',' + top + ', Z'
+        #   red
+        this.svg.insert('path', 'rect')
+                .style('stroke', 'red')
+                .style('fill', 'red')
+                .attr('d', _rectPathStr(left_edge, unit_width, background_top, background_bottom))
+        #   grey
+        this.svg.insert('path', 'rect')
+                .style('stroke', 'grey')
+                .style('fill', 'grey')
+                .attr('d', _rectPathStr(unit_width, unit_width*4, background_top, background_bottom))
+        #   blue
+        this.svg.insert('path', 'rect')
+                .style('stroke', 'blue')
+                .style('fill', 'blue')
+                .attr('d', _rectPathStr(unit_width*4, unit_width*5, background_top, background_bottom))
 
     #Need to develp more genesets FIRST
     redraw_double: () ->
@@ -180,6 +223,83 @@ class BarcodePlot
     on: (t,func) ->
         this.dispatch.on(t, func)
 
+    _worm_calc: (d, domain) ->
+        # seq generates n evenly spaced values between -1 and 1
+        _seq = (n) ->
+            if n <= 1
+                return [0]
+            val = [0 ... n]
+            val.forEach((e, i, arr) =>
+                arr[i] = 2 * ((e - arr[0]) / ((arr[arr.length - 1]) - arr[0])) - 1
+            )
+            val
+        # arr - Array to compute moving average
+        # wt - Weights for average
+        # hw - half the length of weights (floored)
+        # w - length of weights (odd)
+        _avg = (arr, wt, hw, w) ->
+            _calcMean= (arr1, arr2) ->
+                if arr1.length != arr2.length
+                    console.log(arr1.length)
+                    console.log(arr2.length)
+                    return -1
+                result = Array(arr1.length)
+                arr1.forEach((e, i, a) =>
+                    result[i] = arr1[i] * arr2[i]
+                )
+                return result.reduce((a, b) -> a + b)
+            #Calculate initial width value
+            weighted = Array(arr.length)
+            wt_csum = Array(arr.length)
+            i = hw
+            while i < (arr.length - hw)
+                weighted[i] = _calcMean(arr.filter((e, j, a) => (j >= i - hw) && (j <= i + hw)), wt)
+                i++
+
+            i = 0
+            # Resize the array, removing the padded zeroes
+            while i < hw
+                weighted.pop()
+                weighted.shift()
+                i++
+
+            # Produce cumulative sum of weights
+            wt.reduce ((a, b, i) ->
+                wt_csum[i] = a + b
+                ), 0
+
+            # Fix size of array, unclear as to why the length is changed
+            wt_csum.splice(wt.length, wt_csum.length)
+            i = 0
+            # while i < hw
+            #     weighted[i] = weighted[i] / wt_csum[(wt_csum.length - i - 1)]
+            #     weighted[w - i] = weighted[w - i] / wt_csum[(wt_csum.length - i - 1)]
+            #     i++
+            return weighted
+
+
+        all_ranks = [domain[0]...domain[1]]
+        #Coerce to list of 1 and 0
+        res = all_ranks.map((all_el) => d.map((d_e) => d_e.rank).includes(all_el) + 0)
+        slow = false
+        if slow
+            av = d.length/all_ranks.length
+            u = _seq(Math.floor((all_ranks.length * 0.45) / 2) * 2 + 1)
+            wt = u.map((e) ->
+                Math.pow(Math.pow((1 - Math.abs(e)), 3), 3)
+                )
+            window_width = u.length
+            halfWindow_width = Math.floor(window_width / 2)
+
+            #pad L and R with zeroes
+            wk = Array(halfWindow_width).fill(0).concat(res.concat(Array(halfWindow_width).fill(0)))
+            avg = _avg(wk, wt, halfWindow_width, window_width)
+            avg = avg.map((e, k, a) -> {x: k, y:e})
+        else
+            av = d.length/all_ranks.length
+            avg = res.map((e,k,a) => {x: k, y:(e / av)})
+        return avg
+
     highlight: (d) ->
         _reset = () =>
             this.svg.selectAll('rect')
@@ -193,7 +313,7 @@ class BarcodePlot
         if d.length > 0
             _reset()
             d3.select('.rect'+d[0].id)
-                .transition().duration(125)
+                .transition().duration(100)
                 .ease('linear')
                 .attr('y', 50)
                 .attr('height', 100)
