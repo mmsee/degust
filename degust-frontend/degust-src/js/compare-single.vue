@@ -216,6 +216,20 @@
                   </select>
                 </div>
               </div><!-- div.pca-opts -->
+              <div v-show='cur_plot=="barcode"'>
+                <div v-tooltip="tip('Select a gene set to test for enrichment')">
+                  <label>Genes Up</label>
+                  <select v-model='geneFilterTop'>
+                    <option v-for='val in user_gene_lists'>{{ val.title }}</option>
+                  </select>
+                </div>
+                <div v-tooltip="tip('Select a gene-set to test for enrichment')">
+                  <label>Genes Down</label>
+                  <select v-model='geneFilterBottom'>
+                    <option v-for='val in user_gene_lists'>{{ val.title }}</option>
+                  </select>
+                </div>
+              </div><!-- div.barcode-opts-->
             </div>
 
             <div class='text-left' v-show='!is_pre_analysed'>
@@ -330,7 +344,7 @@
                   :filter-two='null'
                   :filter-changed='filter_changed'
                   :info-cols='info_columns'
-                  :double='false'
+                  :double='true'
                   :highlight='genes_highlight'
                   @mouseover='v => hover_genes(v)'
                   @keepHighlight='set_genes_selected'

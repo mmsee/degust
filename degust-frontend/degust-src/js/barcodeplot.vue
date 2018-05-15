@@ -30,6 +30,18 @@
         padding-bottom: 25px;
 
     }
+
+    div >>> .axis path,
+    .axis line {
+        fill: none;
+        stroke: black;
+        shape-rendering: crispEdges;
+    }
+
+    .axis text {
+        font-family: sans-serif;
+        font-size: 11px;
+    }
 </style>
 
 <template>
@@ -85,10 +97,9 @@ class BarcodePlot
 
     #returns the appropriate redraw function for double/single plots
     redraw: () ->
+        this.redraw_single()
         if this.opts.double
             this.redraw_double()
-        else
-            this.redraw_single()
 
     redraw_single: () ->
         if !this.data
@@ -102,9 +113,9 @@ class BarcodePlot
             .domain([0, this.data.length])
             .range([this.opts.margin_l, this.width-this.opts.margin_l-this.opts.margin_r])
 
-        this.yScale = yScale = d3.scale.ordinal()
-            .domain(['bottom', 'mid', 'top'])
-            .rangeRoundPoints([0, this.height])
+        this.yScale = yScale = d3.scale.linear()
+            .domain([1, 0])
+            .range([this.opts.margin_t, this.height * 0.4])
 
         # Kept - stuff that passes filter
         # rect_new - New points to add
@@ -113,7 +124,11 @@ class BarcodePlot
         kept = this.data.filter((d) => this.opts.filter(d))
         rects = this.svg.selectAll('rect')
                         .data(kept.reverse())
+
+        # Remove ALL old points
         rects.exit().remove()
+        this.svg.selectAll('path').remove()
+        this.svg.selectAll('g').remove()
 
         div = d3.select('.barcode-tooltip')
 
@@ -165,25 +180,7 @@ class BarcodePlot
                         .style('opacity', 0)
                 )
 
-        # Append Worm
-        #Generate worm points
-        this.svg.selectAll('path').remove()
-
-        worm_data = this._worm_calc(kept, xdomain)
-
-        lf = d3.svg.line()
-            .x((d) => xScale(d.x))
-            .y((d) => d.y)
-            .interpolate('basis')
-
-        # this.svg.insert('path', 'rect')
-        this.svg.append('path')
-            .attr('stroke', 'steelblue')
-            .attr('fill', 'none')
-            .attr("stroke-width", 1.5)
-            .attr('d', lf(worm_data))
-
-        # Append background
+        # Insert Background
         #Top & Bottom
         background_top = 110
         background_bottom = 150
@@ -208,9 +205,46 @@ class BarcodePlot
                 .style('fill', 'blue')
                 .attr('d', _rectPathStr(unit_width*4, unit_width*5, background_top, background_bottom))
 
+        # Append Worm
+        #Generate worm points
+        yaxis = d3.svg.axis()
+                .scale(yScale)
+                .orient('left')
+                .tickValues([0,0.5,1])
+
+        this.svg.append('g')
+            .attr('class', 'axis')
+            .attr('transform', 'translate(30,0)')
+
+            .call(yaxis)
+
+        worm_data = this._worm_calc(kept, xdomain)
+        avg = d3.mean(worm_data.map((e) -> e.y))
+        avg_data = worm_data.map((e) -> {x: e.x, y: avg})
+
+        lf = d3.svg.line()
+            .x((d) => xScale(d.x))
+            .y((d) => yScale(d.y))
+            .interpolate('basis')
+
+        # this.svg.insert('path', 'rect')
+        this.svg.append('path')
+            .attr('stroke', 'steelblue')
+            .attr('fill', 'none')
+            .attr("stroke-width", 2)
+            .attr('d', lf(worm_data))
+
+        # Add median/mean graph of values
+        this.svg.append('path')
+            .attr('stroke', 'black')
+            .attr('fill', 'none')
+            .attr("stroke-width", 1)
+            .style("stroke-dasharray", "4,4")
+            .attr('d', lf(avg_data))
+
     #Need to develp more genesets FIRST
     redraw_double: () ->
-        this.redraw_single()
+        console.log('double')
 
     reFilter: () ->
         if !this.data
@@ -237,11 +271,9 @@ class BarcodePlot
         # wt - Weights for average
         # hw - half the length of weights (floored)
         # w - length of weights (odd)
-        _avg = (arr, wt, hw, w) ->
+        _avg_slow = (arr, wt, hw, w) ->
             _calcMean= (arr1, arr2) ->
                 if arr1.length != arr2.length
-                    console.log(arr1.length)
-                    console.log(arr2.length)
                     return -1
                 result = Array(arr1.length)
                 arr1.forEach((e, i, a) =>
@@ -252,7 +284,7 @@ class BarcodePlot
             weighted = Array(arr.length)
             wt_csum = Array(arr.length)
             i = hw
-            while i < (arr.length - hw)
+            while i <= (arr.length - hw)
                 weighted[i] = _calcMean(arr.filter((e, j, a) => (j >= i - hw) && (j <= i + hw)), wt)
                 i++
 
@@ -277,27 +309,53 @@ class BarcodePlot
             #     i++
             return weighted
 
+        _avg_fast = (arr, hw, w, kl) ->
+            #initial average
+            count = arr.filter((e, i) =>
+                i < w
+            ).reduce((a,b) -> a + b) / w
+            result = []
+            #Iterate over full array
+            i = hw
+            while i <= (arr.length - hw)
+                #add next value, subtract old
+                count += (arr[i + hw - 1])
+                count -= if count - (arr[i - hw - 1]) >= 0 then (arr[i - hw]) else 0
+                # Proportion of window which is enriched as proportion of maximum enrichment (number of genes in kept(filter) divided by width)
+                result.push((count / w) / (kl / w))
+                i++
+
+            #For the size of hw on both ends of the array, values need to be moderated to remove the effect of the padded zeros.
+            # i = 0
+            # while i <= hw
+            #     m = if i > 0 then i else 1
+            #     result[i] = result[i] / (kl / result.length) * m
+            #     result[result.length - i - 1] = result[result.length - i - 1] / (kl / result.length) * (if i > 0 then i else 1)
+            #     console.log(result)
+            #     i++
+            return result
 
         all_ranks = [domain[0]...domain[1]]
         #Coerce to list of 1 and 0
         res = all_ranks.map((all_el) => d.map((d_e) => d_e.rank).includes(all_el) + 0)
+
+        hav = d.length/all_ranks.length
+        #pad L and R with zeroes
+        window_width = Math.floor((all_ranks.length * 0.45) / 2) * 2 + 1
+        halfWindow_width = Math.floor(window_width / 2)
+        wk = Array(halfWindow_width).fill(0).concat(res.concat(Array(halfWindow_width).fill(0)))
+
         slow = false
         if slow
-            av = d.length/all_ranks.length
-            u = _seq(Math.floor((all_ranks.length * 0.45) / 2) * 2 + 1)
+            u = _seq(window_width)
             wt = u.map((e) ->
                 Math.pow(Math.pow((1 - Math.abs(e)), 3), 3)
                 )
-            window_width = u.length
-            halfWindow_width = Math.floor(window_width / 2)
-
-            #pad L and R with zeroes
-            wk = Array(halfWindow_width).fill(0).concat(res.concat(Array(halfWindow_width).fill(0)))
-            avg = _avg(wk, wt, halfWindow_width, window_width)
-            avg = avg.map((e, k, a) -> {x: k, y:e})
+            avg = _avg_slow(wk, wt, halfWindow_width, window_width)
         else
-            av = d.length/all_ranks.length
-            avg = res.map((e,k,a) => {x: k, y:(e / av)})
+            avg = _avg_fast(wk, halfWindow_width, window_width, d.length)
+
+        avg = avg.map((e, k, a) -> {x: k, y:e})
         return avg
 
     highlight: (d) ->
@@ -343,6 +401,8 @@ module.exports =
         data:
             default: null
         filter:
+            default: null
+        filterTwo:
             default: null
         filterChanged: null
         double:
@@ -394,6 +454,17 @@ module.exports =
         reFilter: () ->
             this.$emit('keepHighlight', this.clone_data.filter((d) => this.filter(d)), true)
             this.me.reFilter()
+
+    # simple_filter: (row) ->
+    #     # Filter by genes in user_gene_list
+    #     if this.user_gene_lists.length > 0 && this.use_gene_filter
+    #         info_cols = this.gene_data.columns_by_type('info').map((c) -> row[c.idx])
+    #         matching = info_cols.filter((col) =>
+    #             col.toLowerCase() of this.user_gene_list_cache
+    #         )
+    #         if matching.length == 0
+    #             return false
+    #    true
 
     mounted: () ->
         #Clone the data so we can insert a rank ID and InfoCols to the data
