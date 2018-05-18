@@ -220,13 +220,19 @@
                 <div v-tooltip="tip('Select a gene set to test for enrichment')">
                   <label>Genes Up</label>
                   <select v-model='geneFilterTop'>
-                    <option v-for='val in user_gene_lists'>{{ val.title }}</option>
+                    <option :value='-1'>None</option>
+                    <option v-for='(geneList, i) in user_gene_lists' :value='i'>{{geneList.title}}</option>
+                    </select>
+
                   </select>
                 </div>
                 <div v-tooltip="tip('Select a gene-set to test for enrichment')">
                   <label>Genes Down</label>
                   <select v-model='geneFilterBottom'>
-                    <option v-for='val in user_gene_lists'>{{ val.title }}</option>
+                    <option :value='-1'>None</option>
+                    <option v-for='(geneList, i) in user_gene_lists' :value='i'>{{geneList.title}}</option>
+                    </select>
+
                   </select>
                 </div>
               </div><!-- div.barcode-opts-->
@@ -340,8 +346,9 @@
                   :data='gene_data_rows'
                   :colour='plot_colouring'
                   :plot-cols='fc_calc_columns'
-                  :filter='expr_filter'
-                  :filter-two='null'
+                  :filter-up='user_gene_lists[geneFilterTop]'
+                  :filter-down='user_gene_lists[geneFilterBottom]'
+                  :filter-ext='expr_filter'
                   :filter-changed='filter_changed'
                   :info-cols='info_columns'
                   :double='true'

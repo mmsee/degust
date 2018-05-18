@@ -111,8 +111,8 @@ module.exports =
         show_ModalExperimentDesc: false
         descTooltipLoc: [0,0]
         use_gene_filter: true
-        geneFilterTop: null
-        geneFilterBottom: null
+        geneFilterTop: 0
+        geneFilterBottom: -1
         #colour_by_condition: null  # Don't want to track changes to this!
 
     computed:
