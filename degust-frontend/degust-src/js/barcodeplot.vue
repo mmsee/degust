@@ -117,10 +117,6 @@ class BarcodePlot
             .domain([0, this.data.length])
             .range([this.opts.margin_l, this.width-this.opts.margin_l-this.opts.margin_r])
 
-        this.yScale = yScale = d3.scale.linear()
-            .domain([1, 0])
-            .range([this.opts.margin_t, this.height * 0.35])
-
         # Kept - stuff that passes filter
         # rect_new - New points to add
         # .exit - Remove old
@@ -196,8 +192,14 @@ class BarcodePlot
         #Top & Bottom
         background_top = 90
         background_bottom = 125
-        unit_width = xScale(xdomain[1])/5
-        left_edge = xScale(xdomain[0])
+        # unit_width = xScale(xdomain[1])/5
+        # left_edge = xScale(xdomain[0])
+
+        rank_ordering = this.data.map((e) -> e.sign)
+        #Find first value
+        right_val = rank_ordering.indexOf(rank_ordering.find((e) -> e > Math.SQRT2))
+        #Find last value
+        left_val = rank_ordering.indexOf(rank_ordering.filter((e) -> e < (-1 * Math.SQRT2)).pop())
 
         _rectPathStr = (left, right, top, bot) ->
             return 'M ' + left + ',' + top + ', L ' + left + ',' + bot + ', L ' + right + ',' + bot + ', L ' + right + ',' + top + ', Z'
@@ -205,33 +207,38 @@ class BarcodePlot
         this.svg.insert('path', 'rect')
                 .style('stroke', '#ff6961')
                 .style('fill', '#ff6961')
-                .attr('d', _rectPathStr(left_edge, unit_width, background_top, background_bottom))
+                .attr('d', _rectPathStr(xScale(xdomain[0]), xScale(left_val), background_top, background_bottom))
         #   grey
         this.svg.insert('path', 'rect')
                 .style('stroke', 'adadad')
                 .style('fill', 'adadad')
-                .attr('d', _rectPathStr(unit_width, unit_width*4, background_top, background_bottom))
+                .attr('d', _rectPathStr(xScale(left_val), xScale(right_val), background_top, background_bottom))
         #   blue
         this.svg.insert('path', 'rect')
                 .style('stroke', '#61a8ff')
                 .style('fill', '#61a8ff')
-                .attr('d', _rectPathStr(unit_width*4, unit_width*5, background_top, background_bottom))
+                .attr('d', _rectPathStr(xScale(right_val), xScale(xdomain[1]), background_top, background_bottom))
 
         # Append Worm
         #Generate worm points
-        yaxis = d3.svg.axis()
-                .scale(yScale)
-                .orient('left')
-                .tickValues([0,0.5,1])
-
-        this.svg.append('g')
-            .attr('class', 'axis')
-            .attr('transform', 'translate(30,0)')
-            .call(yaxis)
-
         worm_data = this._worm_calc(kept, xdomain)
         avg = d3.mean(worm_data.map((e) -> e.y))
         avg_data = worm_data.map((e) -> {x: e.x, y: avg})
+        yScale1Extent = [d3.extent(worm_data.map((e) -> e.y))[1], 0]
+
+        this.yScale = yScale = d3.scale.linear()
+            .domain(yScale1Extent)
+            .range([this.opts.margin_t, this.height * 0.35])
+
+        yaxis = d3.svg.axis()
+                .scale(yScale)
+                .orient('left')
+                .tickValues([0,yScale1Extent[0]/2,yScale1Extent[0]])
+
+        this.svg.append('g')
+            .attr('class', 'axis')
+            .attr('transform', 'translate('+this.opts.margin_l+',0)')
+            .call(yaxis)
 
         lf = d3.svg.line()
             .x((d) => xScale(d.x))
@@ -256,10 +263,6 @@ class BarcodePlot
     #Need to develp more genesets FIRST
     redraw_double: () ->
         keptDown = this.data.filter((d) => this.opts.filterFunc(d, this.geneListDown))
-        this.yScale2 = yScale2 = d3.scale.linear()
-            .domain([0, 1])
-            .range([this.height * 0.65, this.height - this.opts.margin_b])
-
         div = d3.select('.barcode-tooltip-bottom')
 
         rectsDown = this.svg.selectAll('.rect.down')
@@ -321,8 +324,11 @@ class BarcodePlot
 
         background_top = 125
         background_bottom = 160
-        unit_width = this.xScale(this.xdomain[1])/5
-        left_edge = this.xScale(this.xdomain[0])
+        rank_ordering = this.data.map((e) -> e.sign)
+        #Find first value
+        right_val = rank_ordering.indexOf(rank_ordering.find((e) -> e > Math.SQRT2))
+        #Find last value
+        left_val = rank_ordering.indexOf(rank_ordering.filter((e) -> e < (-1 * Math.SQRT2)).pop())
 
         _rectPathStr = (left, right, top, bot) ->
             return 'M ' + left + ',' + top + ', L ' + left + ',' + bot + ', L ' + right + ',' + bot + ', L ' + right + ',' + top + ', Z'
@@ -330,33 +336,39 @@ class BarcodePlot
         this.svg.insert('path', 'rect')
                 .style('stroke', '#ff6961')
                 .style('fill', '#ff6961')
-                .attr('d', _rectPathStr(left_edge, unit_width, background_top, background_bottom))
+                .attr('d', _rectPathStr(this.xScale(this.xdomain[0]), this.xScale(left_val), background_top, background_bottom))
         #   grey
         this.svg.insert('path', 'rect')
                 .style('stroke', 'adadad')
                 .style('fill', 'adadad')
-                .attr('d', _rectPathStr(unit_width, unit_width*4, background_top, background_bottom))
+                .attr('d', _rectPathStr(this.xScale(left_val), this.xScale(right_val), background_top, background_bottom))
         #   blue
         this.svg.insert('path', 'rect')
                 .style('stroke', '#61a8ff')
                 .style('fill', '#61a8ff')
-                .attr('d', _rectPathStr(unit_width*4, unit_width*5, background_top, background_bottom))
+                .attr('d', _rectPathStr(this.xScale(right_val), this.xScale(this.xdomain[1]), background_top, background_bottom))
 
         # Append Worm
         #Generate worm points
-        yaxis2 = d3.svg.axis()
-                .scale(this.yScale2)
-                .orient('left')
-                .tickValues([0,0.5,1])
-
-        this.svg.append('g')
-            .attr('class', 'axis')
-            .attr('transform', 'translate(30)')
-            .call(yaxis2)
-
         worm_data = this._worm_calc(keptDown, this.xdomain)
         avg = d3.mean(worm_data.map((e) -> e.y))
         avg_data = worm_data.map((e) -> {x: e.x, y: avg})
+
+        yScale2Extent = [0, d3.extent(worm_data.map((e) -> e.y))[1]]
+
+        this.yScale2 = yScale2 = d3.scale.linear()
+            .domain(yScale2Extent)
+            .range([this.height * 0.65, this.height - this.opts.margin_b])
+
+        yaxis2 = d3.svg.axis()
+                .scale(this.yScale2)
+                .orient('left')
+                .tickValues([0,yScale2Extent[1]/2,yScale2Extent[1]])
+
+        this.svg.append('g')
+            .attr('class', 'axis')
+            .attr('transform', 'translate('+this.opts.margin_l+',0)')
+            .call(yaxis2)
 
         lf = d3.svg.line()
             .x((d) => this.xScale(d.x))
@@ -457,8 +469,7 @@ class BarcodePlot
                 #add next value, subtract old
                 count += (arr[i + hw - 1])
                 count -= if count - (arr[i - hw - 1]) >= 0 then (arr[i - hw]) else 0
-                # Proportion of window which is enriched as proportion of maximum enrichment (number of genes in kept(filter) divided by width)
-                result.push((count / w) / (kl / w))
+                result.push((count / w))
                 i++
 
             #For the size of hw on both ends of the array, values need to be moderated to remove the effect of the padded zeros.
@@ -546,7 +557,7 @@ module.exports =
         name:
             default: 'barcode'
         marginL:
-            default: 30
+            default: 40
         marginR:
             default: 30
         marginT:
@@ -575,7 +586,7 @@ module.exports =
         barcodeCol: () ->
             col = this.plotCols
             this.clone_data.forEach((e) ->
-                e.sign = Math.sign(e[col[1].idx]) * e["P.Value"]
+                e.sign = Math.sign(e[col[1].idx]) * Math.log2(e["P.Value"])
             )
             this.clone_data.sort((a,b) =>
                a.sign - b.sign
