@@ -342,7 +342,7 @@
                         >
                 </mds-plot>
                 <div v-if='cur_plot=="barcode" && user_gene_lists.length == 0'>
-                  <h4>Please enter a gene filter/set/group/thing</h4>
+                  <h4>Please enter/select a Gene Set</h4>
                 </div>
                 <barcode-plot v-else-if='cur_plot=="barcode"'
                   :name='experimentName+" - "+"barcode"'
