@@ -57,6 +57,54 @@
 
 css = {axis: 'axis', barcode: 'barcode'}
 
+#Avg function for a web worker
+avg = (e) ->
+    [arr, hw, w, weights, wormIndex] = e.data
+    if !arr?
+        self.postMessage({error: "Data missing"})
+        return
+
+    if !hw? || !w?
+        self.postMessage({error: "Weight lengths missing"})
+        return
+
+    if arr? && arr.length==0
+        self.postMessage({done: []})
+        return
+
+    #Does not avoid NaN/undefined values
+    sum = (values) ->
+        n = values.length
+        i = -1
+        total = 0
+        while ++i < n
+            total += values[i]
+        total
+    _dot = (arr1, arr2, sumfunc) =>
+        total = new Float64Array(arr1.length)
+        i = -1
+        # end = arr1.length
+        while(i++ < arr1.length)
+            total[i] = arr1[i] * arr2[i]
+        res = sum(total)
+        return res
+
+    end = arr.length - hw
+    i = hw - 1
+    result = new Float64Array(arr.length - hw * 2)
+    while (i++ <= end)
+        result[i-hw] = _dot(arr.slice(i-hw, i+hw+1), weights.weights)
+    # adjust ends
+    i = -1
+    half_csum = weights.csum.slice(w-hw, w-1)
+    end = half_csum.length - 1
+    while i++ < end
+        result[i] = result[i] / half_csum[i]
+        result[end - i] / half_csum[i]
+
+    postMessage({done: result, index: wormIndex})
+    close()
+
 #Make barcode plot object
 class BarcodePlot
     constructor: (@opts={}) ->
@@ -80,6 +128,9 @@ class BarcodePlot
         if this.opts.height
             this.elem.style('height', this.opts.height+'px')
 
+        #Web worker for calculating moving average
+        this.worker = [new WorkerWrapper(avg, (d) => this._worker_callback(d)), new WorkerWrapper(avg, (d) => this._worker_callback(d))]
+        this.wormVal = {}
 
         #Initialise SVG's
         # May want to consider using canvas because 11K+ rectangles is a lot
@@ -91,12 +142,24 @@ class BarcodePlot
         #This calls the resize which calls the redraw
         this.resize()
 
+    _worker_callback: (d) ->
+        if d.error?
+            log_error("Worker error : #{d.error}")
+        # if d.upto?
+        #     this._show_calc_info("Clustered #{d.upto} of #{this.data.length}")
+        if d.done?
+            this.wormVal['w'+d.index] = {data: d.done, id: if d.index == 1 then Object.keys(this.geneListUp).join() else Object.keys(this.geneListDown).join()}
+            # this.wormVal['w'+d.index].data = d.done
+            # this.wormVal['w'+d.index].id = 'aaaa'
+            this.redraw()
+        # if d.took?
+        #     log_debug("calc_order: took=#{d.took}ms for #{this.data.length} points")
+
     resize: () ->
         this.width = this.opts.width || this.elem.node().clientWidth
         this.height = this.opts.height || this.elem.node().clientHeight
         this.svg.attr('width', this.width)
                 .attr('height', this.height)
-
         this.redraw()
 
     #returns the appropriate redraw function for double/single plots
@@ -221,43 +284,47 @@ class BarcodePlot
 
         # Append Worm
         #Generate worm points
-        worm_data = this._worm_calc(kept, xdomain)
-        avg = kept.length / this.data.length
-        avg_data = worm_data.map((e) -> {x: e.x, y: avg})
-        yScale1Extent = [d3.extent(worm_data.map((e) -> e.y))[1], 0]
-        this.yScale = yScale = d3.scale.linear()
-            .domain(yScale1Extent)
-            .range([this.opts.margin_t, this.height * 0.35])
+        if this.wormVal.w1? && (this.wormVal.w1.id == this.curW1)
+            worm_data = Array.prototype.slice.call(this.wormVal.w1.data).map((e, k, a) -> {x: k, y:e})
+            avg = kept.length / this.data.length
+            avg_data = worm_data.map((e) -> {x: e.x, y: avg})
+            yScale1Extent = [d3.extent(worm_data.map((e) -> e.y))[1], 0]
+            this.yScale = yScale = d3.scale.linear()
+                .domain(yScale1Extent)
+                .range([this.opts.margin_t, this.height * 0.35])
 
-        yaxis = d3.svg.axis()
-                .scale(yScale)
-                .orient('left')
-                .tickValues([0,yScale1Extent[0]/2,yScale1Extent[0]])
+            yaxis = d3.svg.axis()
+                    .scale(yScale)
+                    .orient('left')
+                    .tickValues([0,yScale1Extent[0]/2,yScale1Extent[0]])
 
-        this.svg.append('g')
-            .attr('class', 'axis')
-            .attr('transform', 'translate('+this.opts.margin_l+',0)')
-            .call(yaxis)
+            this.svg.append('g')
+                .attr('class', 'axis')
+                .attr('transform', 'translate('+this.opts.margin_l+',0)')
+                .call(yaxis)
 
-        lf = d3.svg.line()
-            .x((d) => xScale(d.x))
-            .y((d) => yScale(d.y))
-            .interpolate('basis')
+            lf = d3.svg.line()
+                .x((d) => xScale(d.x))
+                .y((d) => yScale(d.y))
+                .interpolate('basis')
 
-        # this.svg.insert('path', 'rect')
-        this.svg.append('path')
-            .attr('stroke', '#970417')
-            .attr('fill', 'none')
-            .attr("stroke-width", 2)
-            .attr('d', lf(worm_data))
+            # this.svg.insert('path', 'rect')
+            this.svg.append('path')
+                .attr('stroke', '#970417')
+                .attr('fill', 'none')
+                .attr("stroke-width", 2)
+                .attr('d', lf(worm_data))
 
-        # Add median/mean graph of values
-        this.svg.append('path')
-            .attr('stroke', 'black')
-            .attr('fill', 'none')
-            .attr("stroke-width", 1.5)
-            .style("stroke-dasharray", "4,4")
-            .attr('d', lf(avg_data))
+            # Add median/mean graph of values
+            this.svg.append('path')
+                .attr('stroke', 'black')
+                .attr('fill', 'none')
+                .attr("stroke-width", 1.5)
+                .style("stroke-dasharray", "4,4")
+                .attr('d', lf(avg_data))
+            # this.wormVal.w1 = undefined
+        else
+            this._worm_calc(kept, xdomain, this.worker[0], 1)
 
     #Need to develp more genesets FIRST
     redraw_double: () ->
@@ -349,45 +416,49 @@ class BarcodePlot
 
         # Append Worm
         #Generate worm points
-        worm_data = this._worm_calc(keptDown, this.xdomain)
-        avg = keptDown.length / this.data.length
-        avg_data = worm_data.map((e) -> {x: e.x, y: avg})
+        if this.wormVal.w2? && (this.wormVal.w2.id == this.curW2)
+            worm_data = Array.prototype.slice.call(this.wormVal.w2.data).map((e, k, a) -> {x: k, y:e})
+            avg = keptDown.length / this.data.length
+            avg_data = worm_data.map((e) -> {x: e.x, y: avg})
 
-        yScale2Extent = [0, d3.extent(worm_data.map((e) -> e.y))[1]]
+            yScale2Extent = [0, d3.extent(worm_data.map((e) -> e.y))[1]]
 
-        this.yScale2 = yScale2 = d3.scale.linear()
-            .domain(yScale2Extent)
-            .range([this.height * 0.65, this.height - this.opts.margin_b])
+            this.yScale2 = yScale2 = d3.scale.linear()
+                .domain(yScale2Extent)
+                .range([this.height * 0.65, this.height - this.opts.margin_b])
 
-        yaxis2 = d3.svg.axis()
-                .scale(this.yScale2)
-                .orient('left')
-                .tickValues([0,yScale2Extent[1]/2,yScale2Extent[1]])
+            yaxis2 = d3.svg.axis()
+                    .scale(this.yScale2)
+                    .orient('left')
+                    .tickValues([0,yScale2Extent[1]/2,yScale2Extent[1]])
 
-        this.svg.append('g')
-            .attr('class', 'axis')
-            .attr('transform', 'translate('+this.opts.margin_l+',0)')
-            .call(yaxis2)
+            this.svg.append('g')
+                .attr('class', 'axis')
+                .attr('transform', 'translate('+this.opts.margin_l+',0)')
+                .call(yaxis2)
 
-        lf = d3.svg.line()
-            .x((d) => this.xScale(d.x))
-            .y((d) => this.yScale2(d.y))
-            .interpolate('basis')
+            lf = d3.svg.line()
+                .x((d) => this.xScale(d.x))
+                .y((d) => this.yScale2(d.y))
+                .interpolate('basis')
 
-        # this.svg.insert('path', 'rect')
-        this.svg.append('path')
-            .attr('stroke', '#04517e')
-            .attr('fill', 'none')
-            .attr("stroke-width", 2)
-            .attr('d', lf(worm_data))
+            # this.svg.insert('path', 'rect')
+            this.svg.append('path')
+                .attr('stroke', '#04517e')
+                .attr('fill', 'none')
+                .attr("stroke-width", 2)
+                .attr('d', lf(worm_data))
 
-        # Add median/mean graph of values
-        this.svg.append('path')
-            .attr('stroke', 'black')
-            .attr('fill', 'none')
-            .attr("stroke-width", 1.5)
-            .style("stroke-dasharray", "4,4")
-            .attr('d', lf(avg_data))
+            # Add median/mean graph of values
+            this.svg.append('path')
+                .attr('stroke', 'black')
+                .attr('fill', 'none')
+                .attr("stroke-width", 1.5)
+                .style("stroke-dasharray", "4,4")
+                .attr('d', lf(avg_data))
+            # this.wormVal.w2 = undefined
+        else
+            this._worm_calc(keptDown, this.xdomain, this.worker[1], 2)
 
 
     reFilter: () ->
@@ -400,12 +471,14 @@ class BarcodePlot
         this.barcodeCol = barcodeCol
         this.geneListUp = geneListUp
         this.geneListDown = geneListDown
+        this.curW1 = Object.keys(geneListUp).join()
+        this.curW2 = Object.keys(geneListDown).join()
         this.redraw()
 
     on: (t,func) ->
         this.dispatch.on(t, func)
 
-    _worm_calc: (d, domain) ->
+    _worm_calc: (d, domain, worker, wormIndex) ->
         _weights = (n) ->
             if n <= 1
                 return [0]
@@ -430,30 +503,9 @@ class BarcodePlot
                 csum[i] = val[i] + csum[i-1]
 
             {weights: val, csum: csum}
-        _avg = (arr, hw, w, kl) ->
-            _dot = (arr1, arr2) ->
-                result = new Float64Array(arr1.length)
-                i = -1
-                # end = arr1.length
-                while(i++ < arr1.length)
-                    result[i] = arr1[i] * arr2[i]
-                res = d3.sum(result)
-                return res
-
-            end = arr.length - hw
-            weights = _weights(w)
-            i = hw - 1
-            result = new Float64Array(arr.length - hw * 2)
-            while (i++ <= end)
-                result[i-hw] = _dot(arr.slice(i-hw, i+hw+1), weights.weights)
-            # adjust ends
-            i = -1
-            half_csum = weights.csum.slice(w-hw, w-1)
-            end = half_csum.length - 1
-            while i++ < end
-                result[i] = result[i] / half_csum[i]
-                result[end - i] / half_csum[i]
-            return result
+        _avg = (arr, hw, w, wormIndex, worker) ->
+            #call web worker
+            worker.start([arr, hw, w, _weights(w), wormIndex])
 
         all_ranks = [domain[0]...domain[1]]
         #Coerce to list of 1 and 0
@@ -467,9 +519,7 @@ class BarcodePlot
         # Pad out ends of array with mean of halfwidth to reduce artefact of having padded with zeroes
         wk = Array(halfWindow_width).fill(0).concat(res.concat(Array(halfWindow_width + 1).fill(0)))
 
-        avg = _avg(wk, halfWindow_width, window_width, d.length)
-        avg = Array.prototype.slice.call(avg).map((e, k, a) -> {x: k, y:e})
-        return avg
+        avg = _avg(wk, halfWindow_width, window_width, wormIndex, worker)
 
     highlight: (d) ->
         _reset = () =>
