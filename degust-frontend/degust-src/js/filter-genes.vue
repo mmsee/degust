@@ -1,7 +1,7 @@
 <style scoped>
 #gene-filter-modal >>> .modal-content {
-    width: 150%;
-    margin-left: -25%;
+    width: 200%;
+    margin-left: -50%;
 }
 #filter-textarea {
     width: 100%;
@@ -9,16 +9,29 @@
     resize:vertical;
 }
 
+.tableWrap {
+    width: 100%
+}
+
+.tableScroll {
+    height: 50%;
+    overflow: auto;
+    margin-top: 20px;
+}
+
 .userListTable {
     font-family: arial, sans-serif;
+    font-size: 8pt;
     border-collapse: collapse;
-    width: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    table-layout: fixed;
 }
 
 .userListTable >>> td, th {
     border: 1px solid #dddddd;
     text-align: left;
-    padding: 8px;
+    padding: 10px;
 }
 
 .userListTable >>> .removeList {
@@ -36,6 +49,9 @@
     background-color: #eeeeee;
 }
 
+.removeList >>> .btn-outline-danger{
+    font-size: 8pt;
+}
 
 </style>
 
@@ -45,32 +61,39 @@
         :closeAction='close'
         id='gene-filter-modal'
         >
-        <h4 slot='header'>{{ usingList? (geneLists.length == 0? 'No lists entered' :'Using: ' + geneLists[curList].get_title()) : 'Gene list filtering toggled off' }}</h4>
+        <h4 slot='header'>{{ usingList? (geneLists.length == 0? 'No lists entered' :'Using: ' + curTitle) : 'Gene list filtering toggled off' }}</h4>
         <div slot='body'>
             <div class='row'>
-                <div class='col-xs-4'>
-                    <ul class="nav nav-tabs">
-                        <li :class='{active: cur_tab=="user"}'>
-                            <a @click='cur_tab="user"'>Your Gene Lists</a>
-                        </li>
-                        <li :class='{active: cur_tab=="predef"}'>
-                            <a @click='cur_tab="predef"'>Predefined</a>
-                        </li>
-                    </ul>
-                    <div v-if='cur_tab=="user"'>
-                        <table class='userListTable'>
-                            <tr :key='list.title' v-for='(list, index) in geneLists' v-bind:class='{"selected": (index == curList)}'>
-                                <td @click='selectList(index)'>{{ list.get_title() }}</td>
-                                <td @click='selectList(index)'>{{ list.get_members().length }} ID's</td>
-                                <td class='removeList' @click='removeIdx(index)'><button type="button" class="btn btn-outline-danger">X</button></td>
-                            </tr>
-                        </table>
-                    </div>
-                    <div v-if='cur_tab=="predef"'>
-                        <h3>PREDEF TAB</h3>
+                <div class='col-xs-5'>
+                    <div class='tableWrap'>
+                        <ul class="nav nav-tabs">
+                            <li :class='{active: cur_tab=="user"}'>
+                                <a @click='cur_tab="user"'>Your Gene Lists</a>
+                            </li>
+                            <li :class='{active: cur_tab=="predef"}'>
+                                <a @click='cur_tab="predef"'>Predefined</a>
+                            </li>
+                        </ul>
+                        <div v-if='cur_tab=="user"' class='tableScroll'>
+                            <table class='userListTable'>
+                                <tr :key='list.title' v-for='(list, index) in geneLists' v-bind:class='{"selected": (index == curList)}'>
+                                    <td @click='selectList(index, "user")'>{{ list.get_title() }}</td>
+                                    <td @click='selectList(index, "user")'>{{ list.get_members().length }} ID's</td>
+                                    <td class='removeList' @click='removeIdx(index)'><button type="button" class="btn btn-outline-danger">X</button></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div v-if='cur_tab=="predef"' class='tableScroll'>
+                            <table class='userListTable'>
+                                <tr :key='list.title' v-for='(list, index) in predefList' v-bind:class='{"selected": (index == curList)}'>
+                                    <td @click='selectList(index, "predef")'>{{ list.get_title() }}</td>
+                                    <td @click='selectList(index, "predef")'>{{ list.get_members().length }} ID's</td>
+                                </tr>
+                            </table>
+                        </div>
                     </div>
                 </div>
-                <div class='col-xs-8'>
+                <div class='col-xs-7'>
                     <input v-model='gene_list_title' placeholder='Enter a Gene List Title'>
                     <br></br>
                     <textarea id='filter-textarea' v-model="inputList" placeholder="Type or paste your delimited genes here"></textarea>
@@ -89,6 +112,7 @@
 
 Modal = require('modal-vue').default
 { GeneList } = require('./gene_list.coffee')
+GeneListAPI = require('./gene_list_api.coffee')
 
 module.exports =
     name: 'filterGenes'
@@ -98,12 +122,22 @@ module.exports =
         gene_list_title: ""
         curList: 0
         usingList: true
+        predefList: []
+        listType: 'user'
     components:
         modal: Modal
     props:
         show: false
         geneLists:
             default: []
+        predefGeneLists:
+            default: []
+    computed:
+        curTitle: () ->
+            if(this.listType == 'user')
+                this.geneLists[this.curList].get_title()
+            else if(this.listType == 'predef')
+                this.predefList[this.curList].get_title()
     methods:
         clearList: () ->
             this.inputList = ""
@@ -121,7 +155,8 @@ module.exports =
             else
                 return false
         filterList: () ->
-            this.$emit('submitList', this.geneLists)
+            this.$emit('submitList', this.geneLists, 'user')
+            this.$emit('listType', this.listType)
             this.$emit('changedCurList', this.curList)
         addToList: () ->
             if this.gene_list_title == ''
@@ -135,7 +170,8 @@ module.exports =
                 this.gene_list_title = ''
                 this.inputList = ''
                 return res
-        selectList: (index) ->
+        selectList: (index, listType) ->
+            this.listType = listType
             this.curList = index
         removeIdx: (index) ->
             this.geneLists.splice(index, 1)
@@ -145,6 +181,13 @@ module.exports =
         closeButton: () ->
             this.filterList()
             this.close()
+        get_predef: () ->
+            this.predefList = await GeneListAPI.get_all_geneLists()
 
-    # mounted: () ->
+    mounted: () ->
+        this.get_predef()
+        #Initialise and pass out gene lists.
+        #
+        # this.$emit('submitList', this.geneLists, 'user')
+        this.$emit('listType', this.listType)
 </script>

@@ -27,6 +27,7 @@ barcodePlot = require('./barcodeplot.vue').default
 { Normalize } = require('./normalize.coffee')
 { GeneData } = require('./gene_data.coffee')
 { GeneList } = require('./gene_list.coffee')
+GeneListAPI = require('./gene_list_api.coffee')
 
 module.exports =
     name: 'compare-single'
@@ -91,6 +92,9 @@ module.exports =
         qc_plots: []
         showGeneList: false
         cur_gene_list: 0
+        list_type: 'user'
+        current_full_gene_list: []
+        predef_gene_lists: []
         sel_conditions: []             # Array of condition names currently selected to compare
         sel_contrast: null             # Contrast if selected.  Hash with name, and columns
         cur_plot: null
@@ -116,6 +120,7 @@ module.exports =
         #colour_by_condition: null  # Don't want to track changes to this!
 
     computed:
+        predefGeneLists: () -> await this.predef_gene_lists
         home_link: () -> this.settings?.home_link || '/'
         fdrWarning: () -> this.cur_plot == 'mds' && this.fdrThreshold<1
         fcWarning: () -> this.cur_plot == 'mds' && this.fcThreshold>0
@@ -232,6 +237,8 @@ module.exports =
                 this.$nextTick(() -> this.initBackend(false))
             else
                 this.code = this.inputCode
+                this.get_predef()
+                this.current_full_gene_list = this.settings.user_gene_lists
                 log_info("Loading settings for code : #{this.code}")
                 $.ajax({
                     type: "GET",
@@ -372,11 +379,15 @@ module.exports =
 
         submitList: (list) ->
             # this.user_gene_lists = list
-            this.settings.userGeneList = list
+            if this.list_type == 'user'
+                this.settings.userGeneList = list
+            this.current_full_gene_list = list
             #AJAX request via JQuery
             this.save()
         changedCurList: (index) ->
             this.cur_gene_list = index
+        curListType: (listType) ->
+            this.list_type = listType
 
         # Check if the passed row passes filters for : FDR, FC, Kegg, Filter List
         expr_filter: (row)   ->
@@ -451,6 +462,9 @@ module.exports =
             ).fail((x) =>
                 log_error("ERROR", x)
             )
+        get_predef: () ->
+            this.predef_gene_lists = await GeneListAPI.get_all_geneLists()
+            console.log(this.predef_gene_lists)
 
     mounted: () ->
         this.init()
