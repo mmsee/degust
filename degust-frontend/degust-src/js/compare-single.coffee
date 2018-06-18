@@ -482,6 +482,20 @@ module.exports =
         get_predef: () ->
             this.predef_gene_lists = await GeneListAPI.get_all_geneLists()
             console.log(this.predef_gene_lists)
+        downloadR: () ->
+            rcode = ""
+            p = this.backend.request_r_code(this.dge_method, this.sel_conditions, this.sel_contrast)
+            p.then((d) =>
+                element = document.createElement('a');
+                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(d));
+                element.setAttribute('download', "degust.R");
+                element.style.display = 'none';
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+
+            )
+
 
     mounted: () ->
         this.init()
