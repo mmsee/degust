@@ -140,9 +140,9 @@
               <div v-tooltip="tip('Filter page to genes in this list')">
                 <label>Gene list</label>
                 <!-- Need to modify this to support multiple gene filters -->
-                  <a @click='showGeneList=true'>{{(user_gene_lists.length == 0) ? "Create Filter" : user_gene_lists.length + " Lists"}}</a>
-                  {{(user_gene_lists.length > 0)? user_gene_lists[cur_gene_list].get_title()+ ' has: ' + user_gene_lists[cur_gene_list].get_members().length + " ID's": ""}}
-                  <a style='float:right;' v-if='user_gene_lists.length > 0' @click='use_gene_filter=!use_gene_filter'>Toggle Filter {{use_gene_filter? ' off' : ' on'}}</a>
+                  <a @click='showGeneList=true'>{{ (current_gene_lists.length == 0) ? "Create Filter" : current_gene_lists.length + " Lists" }}</a>
+                  {{ (current_gene_lists.length > 0) ? current_gene_lists[cur_gene_list_index].get_title()+ ' has: ' + current_gene_lists[cur_gene_list_index].get_members().length + " ID's": "" }}
+                  <a style='float:right;' v-if='current_gene_lists.length > 0' @click='use_gene_filter=!use_gene_filter'>Toggle Filter {{use_gene_filter? ' off' : ' on'}}</a>
               </div>
 
               <div v-tooltip="tip('Show FC from selected condition')">
@@ -435,7 +435,7 @@
               :show='showGeneList'
               :geneLists='user_gene_lists'
               :predefGeneLists='predefGeneLists'
-              :curList='cur_gene_list'
+              :curList='cur_gene_list_index'
               :usingList='use_gene_filter'
               @close='showGeneList=false'
               @submitList='submitList'

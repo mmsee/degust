@@ -91,7 +91,7 @@ module.exports =
         dge_methods: []
         qc_plots: []
         showGeneList: false
-        cur_gene_list: 0
+        cur_gene_list_index: 0
         list_type: 'user'
         current_full_gene_list: []
         predef_gene_lists: []
@@ -173,11 +173,12 @@ module.exports =
                 heatmap_dims = this.normalizationColumns
             heatmap_dims
         user_gene_list_cache: () ->
-            if this.user_gene_lists.length == 0
-                return
-            res = {}
-            this.user_gene_lists[this.cur_gene_list].get_members().forEach((val) -> res[val] = val)
-            res
+            if this.list_type == 'user'
+                if this.user_gene_lists.length == 0
+                    return
+                res = {}
+                this.user_gene_lists[this.cur_gene_list_index].get_members().forEach((val) -> res[val] = val)
+                res
 
         #Added to show/hide counts/intensity
         is_pre_analysed: () ->
@@ -202,6 +203,13 @@ module.exports =
                 )
             res
 
+        current_gene_lists: () ->
+            # check type of list currently used.
+            if this.list_type == "user"
+                return this.user_gene_lists
+            else
+                return this.predef_gene_lists
+
     watch:
         '$route': (n,o) ->
             this.parse_url_params(n.query)
@@ -225,6 +233,8 @@ module.exports =
             this.renormalize()
         shown: () ->
             this.$emit('resize')
+        curListType: () ->
+            this.current_gene_lists()
 
     methods:
         init: () ->
@@ -385,12 +395,12 @@ module.exports =
             #AJAX request via JQuery
             this.save()
         changedCurList: (index) ->
-            this.cur_gene_list = index
-        curListType: (listType) ->
-            this.list_type = listType
+            this.cur_gene_list_index = index
+        curListType: (lt) ->
+            this.list_type = lt
 
         # Check if the passed row passes filters for : FDR, FC, Kegg, Filter List
-        expr_filter: (row)   ->
+        expr_filter: (row) ->
             #console.log "filter"
             if this.fcThreshold>0
                 # Filter using largest FC between any pair of samples
@@ -400,10 +410,10 @@ module.exports =
                     return false
 
             # Filter by genes in user_gene_list
-            if this.user_gene_lists.length > 0 && this.use_gene_filter
+            if this.current_gene_lists[this.cur_gene_list_index].get_members().length > 0 && this.use_gene_filter
                 info_cols = this.gene_data.columns_by_type('info').map((c) -> row[c.idx])
                 matching = info_cols.filter((col) =>
-                    col.toLowerCase() of this.user_gene_list_cache
+                    this.current_gene_lists[this.cur_gene_list_index].get_members().includes(col.toLowerCase())
                 )
                 if matching.length == 0
                     return false

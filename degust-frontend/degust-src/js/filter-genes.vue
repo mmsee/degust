@@ -189,5 +189,5 @@ module.exports =
         #Initialise and pass out gene lists.
         #
         # this.$emit('submitList', this.geneLists, 'user')
-        this.$emit('listType', this.listType)
+        this.$emit('listType', "user")
 </script>
