@@ -5,8 +5,8 @@ get_geneList = (total, name) ->
     console.log(res)
 
 set_geneList = (total, geneset) ->
-
     console.log("Set a genelist " + geneset)
+
 
 find_geneList = (total, st) ->
 
@@ -18,7 +18,7 @@ modify_geneList = (newList) ->
 
 #This is a fake dataset to use before the Ruby API is developed.
 #Using this instead of AJAX GET/SET
-get_all_geneLists = () =>
+get_all_predef_geneLists = () =>
     set = Math.random()
     new Promise((resolve) =>
         if (set < 0.5)
@@ -36,5 +36,5 @@ module.exports =
     set_geneList: set_geneList
     find_geneList: find_geneList
     modify_geneList: modify_geneList
-    get_all_geneLists: get_all_geneLists
+    get_all_predef_geneLists: get_all_predef_geneLists
 
