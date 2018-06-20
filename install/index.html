@@ -117,7 +117,7 @@
               
                 <h1 id="installing-degust-locally">Installing Degust locally.</h1>
 <p>If you just want to use Degust, go <a href="http://degust.erc.monash.edu">here</a></p>
-<p>Clone degust:  </p>
+<p>Clone degust:</p>
 <p><code>git clone https://github.com/drpowell/degust</code></p>
 <p>Install rbenv and Ruby.</p>
 <pre><code>git clone https://github.com/rbenv/rbenv.git ~/.rbenv
@@ -135,7 +135,7 @@ ruby -v
 <p>Install bundler and build Degust:</p>
 <pre><code>gem install bundler
 
-bundle install 
+bundle install
 
 rake degust:deps
 rake degust:build RAILS_ENV=production
@@ -153,9 +153,9 @@ Rscript -e &quot;install.packages(c('seriation', 'jsonlite'), repos='http://cran
 Rscript -e &quot;source('http://bioconductor.org/biocLite.R'); biocLite('limma'); biocLite('edgeR')&quot;
 </code></pre>
 
-<p>Make some required directories:  </p>
+<p>Make some required directories:</p>
 <p><code>mkdir -p uploads log tmp/pids tmp/cache tmp/sockets tmp/R-cache</code></p>
-<p>Setup Rails:  </p>
+<p>Setup database:</p>
 <p><code>rake db:migrate</code></p>
 <p>Run Degust:</p>
 <p><code>rails s</code> or <code>rails s -b 0.0.0.0</code></p>
