@@ -9,11 +9,19 @@ set_geneList = (total, geneset) ->
 
 
 find_geneList = (total, st) ->
-
-    console.log("Found " + st)
+    if(st != "")
+        term = st.toLowerCase()
+        res = total.filter((gl) =>
+            gl.get_title().toLowerCase().includes(term) ||
+            gl.get_members().map((e) => e.toLowerCase()).filter( (gene) =>
+                gene.includes(term)
+            ).length > 0
+        )
+        return res
+    else
+        total
 
 modify_geneList = (newList) ->
-    console.log(this)
     console.log("Updated with " + newlist)
 
 #This is a fake dataset to use before the Ruby API is developed.
