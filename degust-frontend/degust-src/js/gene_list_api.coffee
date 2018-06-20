@@ -1,19 +1,33 @@
 { GeneList } = require('./gene_list.coffee')
 
+# Idea here is that total is simply replaced with an AJAX through the API
+
+get_all_geneLists = () ->
+    #get total
+    return total
+
 get_geneList = (total, name) ->
     res = total.filter((e) => e.title == name)
     console.log(res)
 
 set_geneList = (total, geneset) ->
-    console.log("Set a genelist " + geneset)
-
+    total[total.length] = geneset
+    return total
 
 find_geneList = (total, st) ->
-
-    console.log("Found " + st)
+    if(st != "")
+        term = st.toLowerCase()
+        res = total.filter((gl) =>
+            gl.get_title().toLowerCase().includes(term) ||
+            gl.get_members().map((e) => e.toLowerCase()).filter( (gene) =>
+                gene.includes(term)
+            ).length > 0
+        )
+        return res
+    else
+        total
 
 modify_geneList = (newList) ->
-    console.log(this)
     console.log("Updated with " + newlist)
 
 #This is a fake dataset to use before the Ruby API is developed.

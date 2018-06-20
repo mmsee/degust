@@ -83,9 +83,10 @@
                                 <a @click='cur_tab_left="predef";cur_tab_right="display"'>Predefined</a>
                             </li>
                         </ul>
+                        <div id='glSearchBox'><input type='text' placeholder="Search..." v-model="searchTerm"></div>
                         <div v-if='cur_tab_left=="user"' class='tableScroll'>
                             <table class='userListTable'>
-                                <tr :key='list.title' v-for='(list, index) in geneLists' v-bind:class='{"selected": (index == curList)}'>
+                                <tr :key='list.title' v-for='(list, index) in searchedLists' v-bind:class='{"selected": (index == curList)}'>
                                     <td @click='selectList(index, "user")'>{{ list.get_title() }}</td>
                                     <td @click='selectList(index, "user")'>{{ list.get_members().length }} ID's</td>
                                     <td class='removeList' @click='removeIdx(index)'><button type="button" class="btn btn-outline-danger">X</button></td>
@@ -94,7 +95,7 @@
                         </div>
                         <div v-if='cur_tab_left=="predef"' class='tableScroll'>
                             <table class='userListTable'>
-                                <tr :key='list.title' v-for='(list, index) in predefList' v-bind:class='{"selected": (index == curList)}'>
+                                <tr :key='list.title' v-for='(list, index) in searchedLists' v-bind:class='{"selected": (index == curList)}'>
                                     <td @click='selectList(index, "predef")'>{{ list.get_title() }}</td>
                                     <td @click='selectList(index, "predef")'>{{ list.get_members().length }} ID's</td>
                                 </tr>
@@ -149,6 +150,7 @@ module.exports =
         usingList: true
         predefList: []
         listType: 'user'
+        searchTerm: ""
     components:
         modal: Modal
     props:
@@ -163,12 +165,21 @@ module.exports =
                 this.geneLists[this.curList].get_title()
             else if(this.listType == 'predef')
                 this.predefList[this.curList].get_title()
+        searchedLists: () ->
+            gl = []
+            if(this.cur_tab_left == 'user')
+                gl = this.geneLists
+            else if(this.cur_tab_left == 'predef')
+                gl = this.predefList
+            return GeneListAPI.find_geneList(gl, this.searchTerm)
+
+
     methods:
         clearList: () ->
             this.inputList = ""
         make_gl: () ->
             genelist = this.inputList
-            res = genelist.toLowerCase().split(/,|\n|\t/).map((el) -> el.trim()).filter((el) -> el.length > 0)
+            res = genelist.split(/,|\n|\t/).map((el) -> el.trim()).filter((el) -> el.length > 0)
             newGL = new GeneList(
                 name = this.gene_list_title
                 genes = res
