@@ -661,7 +661,7 @@ module.exports =
                 return false
             info_cols = this.infoCols.map((c) -> row[c.idx])
             matching = info_cols.filter((col) =>
-                col.toLowerCase() of gl
+                col.toLowerCase() of gl || col of gl
             )
             if matching.length == 0
                 return false
