@@ -99,7 +99,7 @@
           <div class='row'> <!-- Give Condition Selector its own row-->
             <conditions-selector v-show='!is_pre_analysed' style='width:100%;'
                               :settings='settings'
-                              :dge_method='dge_method'
+                                :dge_method='dge_method'
                               :sel_conditions='sel_conditions'
                               :sel_contrast='sel_contrast'
                               :dge_methods='dge_methods'

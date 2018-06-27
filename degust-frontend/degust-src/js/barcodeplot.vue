@@ -16,14 +16,14 @@
     }
 
     div >>> barcode-tooltip {
-      /* position: absolute; */
-      /* text-align: left; */
-      font-family: sans-serif;
-      font-size: 11px;
-      pointer-events: none;
-      color: #a6a6a6;
-      opacity: 0;
-  }
+        /* position: absolute; */
+        /* text-align: left; */
+        font-family: sans-serif;
+        font-size: 11px;
+        pointer-events: none;
+        color: #a6a6a6;
+        opacity: 0;
+    }
 
     .barcode-div {
         padding-top: 10px;

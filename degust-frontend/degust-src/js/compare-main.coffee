@@ -6,6 +6,9 @@ maPlot = require('./ma-plot.vue').default
 scatter = require('./scatter-plot.vue').default
 { GeneData } = require('./gene_data.coffee')
 geneTable = require('./gene-table.vue').default
+barcodePlot = require('./barcodeplot.vue').default
+{ GeneList } = require('./gene_list.coffee')
+GeneListAPI = require('./gene_list_api.coffee')
 
 colour_highlight = "Crimson"
 colour_normal = "DarkCyan"
@@ -39,6 +42,7 @@ module.exports =
         genes_highlight: []
         merged_genes_highlight: []
         merged_colour: () -> colour_normal
+        gl_api: GeneListAPI
 
     computed:
         column_width: () ->
@@ -65,12 +69,28 @@ module.exports =
         ma_plot_y_column: () ->
             y_col = this.y_column
             {name: y_col.name, get: (d) -> d[y_col.idx]}
+        barcode_data: () ->
+            a = 0
+            if this.datasets.length > 0
+                # Need to get genefilter data from API
+                lists = []
+                this.datasets.forEach((e,i,a) =>
+                    if e.code?
+                        lists.push(this.get_geneFilters(e.code.secure_id))
+                )
+                # Then parse it
+                # Then give it to the barcode-plot?
+                a = lists
+            return a
 
     watch:
         column_width: () ->
             this.$emit('resize')
 
     methods:
+        get_geneFilters: (code) ->
+            this.gl_api.get_all_geneLists(code)
+
         gene_hover: (idx, genes) ->
             if idx<0
                 keys=genes.map((x) -> x.key)
