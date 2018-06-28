@@ -13,9 +13,9 @@ get_geneList = (total, name) ->
     res = total.filter((e) => e.title == name)
     console.log(res)
 
-set_geneList = (total, geneset) ->
+set_geneList = (total, code) ->
     total[total.length] = geneset
-    return total
+    return 200
 
 find_geneList = (total, st) ->
     if(st != "")
