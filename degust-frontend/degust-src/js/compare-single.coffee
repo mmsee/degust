@@ -25,6 +25,7 @@ parallelCoord = require('./parcoords.vue').default
 heatmap = require('./heatmap.vue').default
 { Normalize } = require('./normalize.coffee')
 { GeneData } = require('./gene_data.coffee')
+{ GeneList } = require('./gene_list.coffee')
 
 module.exports =
     name: 'compare-single'
@@ -87,7 +88,11 @@ module.exports =
         dge_methods: []
         qc_plots: []
         showGeneList: false
+<<<<<<< ours
         filter_gene_list: []
+=======
+        cur_gene_list: 0
+>>>>>>> theirs
         sel_conditions: []             # Array of condition names currently selected to compare
         sel_contrast: null             # Contrast if selected.  Hash with name, and columns
         cur_plot: null
@@ -148,7 +153,8 @@ module.exports =
         filter_changed: () ->
             this.fdrThreshold
             this.fcThreshold
-            this.filter_gene_list_cache
+            this.user_gene_list_cache
+            this.use_gene_filter
             Date.now()
         need_renormalization: () ->
             this.normalization
@@ -160,9 +166,11 @@ module.exports =
             else
                 heatmap_dims = this.normalizationColumns
             heatmap_dims
-        filter_gene_list_cache: () ->
+        user_gene_list_cache: () ->
+            if this.user_gene_lists.length == 0
+                return
             res = {}
-            this.filter_gene_list.forEach((val) -> res[val] = val)
+            this.user_gene_lists[this.cur_gene_list].get_members().forEach((val) -> res[val] = val)
             res
 
         #Added to show/hide counts/intensity
@@ -176,6 +184,17 @@ module.exports =
         tooltipStyleDesc: () ->
             {left: (this.descTooltipLoc[0])+'px', top: (this.descTooltipLoc[1] + window.pageYOffset)+'px'}
             # {left: (this.descTooltipLoc[0])+'px', top: undefined}
+
+        user_gene_lists: () ->
+            res = this.settings.userGeneList || []
+            if res.length > 0
+                res = res.map((el) ->
+                    new GeneList(
+                        name = el.title
+                        genes = el.members
+                    )
+                )
+            res
 
     watch:
         '$route': (n,o) ->
@@ -226,6 +245,7 @@ module.exports =
                         this.settings.input_type = if this.settings.analyze_server_side then 'counts' else 'preanalysed'
 
                     this.load_success=true
+                    console.log(this.settings)
                     this.$nextTick(() -> this.initBackend(true))
                  ).fail((x) =>
                     log_error "Failed to get settings!",x
@@ -350,9 +370,19 @@ module.exports =
             n = Number(v)
             !(isNaN(n) || n<=0)
 
+<<<<<<< ours
         filterList: (value) ->
             this.filter_gene_list = value
             value
+=======
+        submitList: (list) ->
+            # this.user_gene_lists = list
+            this.settings.userGeneList = list
+            #AJAX request via JQuery
+            this.save()
+        changedCurList: (index) ->
+            this.cur_gene_list = index
+>>>>>>> theirs
 
         # Check if the passed row passes filters for : FDR, FC, Kegg, Filter List
         expr_filter: (row)   ->
@@ -364,11 +394,16 @@ module.exports =
                 if Math.abs(extent_fc[0] - extent_fc[1]) < this.fcThreshold
                     return false
 
+<<<<<<< ours
             # Filter by genes in filter_gene_list
             if this.filter_gene_list.length > 0
+=======
+            # Filter by genes in user_gene_list
+            if this.user_gene_lists.length > 0 && this.use_gene_filter
+>>>>>>> theirs
                 info_cols = this.gene_data.columns_by_type('info').map((c) -> row[c.idx])
                 matching = info_cols.filter((col) =>
-                    col.toLowerCase() of this.filter_gene_list_cache
+                    col.toLowerCase() of this.user_gene_list_cache
                 )
                 if matching.length == 0
                     return false
@@ -391,6 +426,21 @@ module.exports =
         modalExperimentDesc: () ->
             this.show_ModalExperimentDesc = true
             return
+
+        script: (typ) ->
+            "#{this.code}/#{typ}"
+        # This needs to have some/any feedback upon a(n) (un)successful save
+        save: () ->
+            # to_send = to_server_model(this.settings)
+            $.ajax(
+                type: "POST"
+                url: this.script("settings")
+                data: {settings: JSON.stringify(this.settings)}
+                dataType: 'json'
+            ).done((x) =>
+            ).fail((x) =>
+                log_error("ERROR",x)
+            )
 
     mounted: () ->
         this.init()

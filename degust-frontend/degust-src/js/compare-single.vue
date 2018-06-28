@@ -132,7 +132,14 @@
 
               <div v-tooltip="tip('Filter page to genes in this list')">
                 <label>Gene list</label>
+<<<<<<< ours
                 <a @click='showGeneList=true'>{{(filter_gene_list.length == 0) ? "Create Filter" : "List Size: " + filter_gene_list.length }}</a>
+=======
+                <!-- Need to modify this to support multiple gene filters -->
+                  <a @click='showGeneList=true'>{{(user_gene_lists.length == 0) ? "Create Filter" : user_gene_lists.length + " Lists"}}</a>
+                  {{(user_gene_lists.length > 0)? user_gene_lists[cur_gene_list].get_title()+ ' has: ' + user_gene_lists[cur_gene_list].get_members().length + " ID's": ""}}
+                  <a style='float:right;' v-if='user_gene_lists.length > 0' @click='use_gene_filter=!use_gene_filter'>Toggle Filter {{use_gene_filter? ' off' : ' on'}}</a>
+>>>>>>> theirs
               </div>
 
               <div v-tooltip="tip('Show FC from selected condition')">
@@ -312,6 +319,25 @@
                         @dimension='v => mdsDimension = v'
                         >
                 </mds-plot>
+<<<<<<< ours
+=======
+                <div v-if='cur_plot=="barcode" && user_gene_lists.length == 0'>
+                  <h4>Please enter a gene filter/set/group/thing</h4>
+                </div>
+                <barcode-plot v-else-if='cur_plot=="barcode"'
+                  :name='experimentName+" - "+"barcode"'
+                  :data='gene_data_rows'
+                  :colour='plot_colouring'
+                  :plot-cols='fc_calc_columns'
+                  :filter='expr_filter'
+                  :filter-two='null'
+                  :filter-changed='filter_changed'
+
+                  :double='false'>
+                  <!-- :gene-set='user_gene_list' -->
+                </barcode-plot>
+
+>>>>>>> theirs
               </div>
             </div><!-- expression -->
 
@@ -363,7 +389,15 @@
     </div> <!-- load_success -->
 
     <!-- Gene List box Modal -->
-    <filterGenes :show='showGeneList' @close='showGeneList=false' @filterList='filterList'></filterGenes>
+    <filterGenes
+              :show='showGeneList'
+              :geneLists='user_gene_lists'
+              :curList='cur_gene_list'
+              :usingList='use_gene_filter'
+              @close='showGeneList=false'
+              @submitList='submitList'
+              @changedCurList='changedCurList'>
+    </filterGenes>
 
     <modalExpDesc
               :show='show_ModalExperimentDesc'

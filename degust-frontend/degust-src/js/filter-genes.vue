@@ -21,10 +21,6 @@
     padding: 8px;
 }
 
-.userListTable >>> tr:nth-child(even) {
-    background-color: #dddddd;
-}
-
 .userListTable >>> .removeList {
     border: 1px solid #dddddd;
     text-align: center;
@@ -34,7 +30,10 @@
 }
 
 .userListTable >>> .selected {
-    color: #bada55;
+    border: 1px solid #000000;
+    color: #00aaff;
+    font-weight: bolder;
+    background-color: #eeeeee;
 }
 
 
@@ -60,7 +59,7 @@
                     </ul>
                     <div v-if='cur_tab=="user"'>
                         <table class='userListTable'>
-                            <tr v-for='(list, index) in geneLists' v-bind:class='{"selected": (index == curList)}'>
+                            <tr :key='list.title' v-for='(list, index) in geneLists' v-bind:class='{"selected": (index == curList)}'>
                                 <td @click='selectList(index)'>{{ list.get_title() }}</td>
                                 <td @click='selectList(index)'>{{ list.get_members().length }} ID's</td>
                                 <td class='removeList' @click='removeIdx(index)'><button type="button" class="btn btn-outline-danger">X</button></td>
@@ -97,13 +96,14 @@ module.exports =
         inputList: ""
         cur_tab: "user"
         gene_list_title: ""
-        geneLists: []
         curList: 0
         usingList: true
     components:
         modal: Modal
     props:
         show: false
+        geneLists:
+            default: []
     methods:
         clearList: () ->
             this.inputList = ""
@@ -131,7 +131,10 @@ module.exports =
                 alert('Duplicated Gene List')
                 return 0
             else
-                return this.geneLists.push(this.make_gl())
+                res = this.geneLists.push(this.make_gl())
+                this.gene_list_title = ''
+                this.inputList = ''
+                return res
         selectList: (index) ->
             this.curList = index
         removeIdx: (index) ->
