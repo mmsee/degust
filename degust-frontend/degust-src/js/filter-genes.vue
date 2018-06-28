@@ -53,6 +53,15 @@
     font-size: 8pt;
 }
 
+#displaydiv {
+    height: 400px;
+    overflow-y: scroll;
+    /* background-color: lightgrey; */
+    border-style: none inset inset none;
+    border-width: 2px;
+
+}
+
 </style>
 
 <template>
@@ -67,14 +76,14 @@
                 <div class='col-xs-5'>
                     <div class='tableWrap'>
                         <ul class="nav nav-tabs">
-                            <li :class='{active: cur_tab=="user"}'>
-                                <a @click='cur_tab="user"'>Your Gene Lists</a>
+                            <li :class='{active: cur_tab_left=="user"}'>
+                                <a @click='cur_tab_left="user";'>Your Gene Lists</a>
                             </li>
-                            <li :class='{active: cur_tab=="predef"}'>
-                                <a @click='cur_tab="predef"'>Predefined</a>
+                            <li :class='{active: cur_tab_left=="predef"}'>
+                                <a @click='cur_tab_left="predef";cur_tab_right="display"'>Predefined</a>
                             </li>
                         </ul>
-                        <div v-if='cur_tab=="user"' class='tableScroll'>
+                        <div v-if='cur_tab_left=="user"' class='tableScroll'>
                             <table class='userListTable'>
                                 <tr :key='list.title' v-for='(list, index) in geneLists' v-bind:class='{"selected": (index == curList)}'>
                                     <td @click='selectList(index, "user")'>{{ list.get_title() }}</td>
@@ -83,7 +92,7 @@
                                 </tr>
                             </table>
                         </div>
-                        <div v-if='cur_tab=="predef"' class='tableScroll'>
+                        <div v-if='cur_tab_left=="predef"' class='tableScroll'>
                             <table class='userListTable'>
                                 <tr :key='list.title' v-for='(list, index) in predefList' v-bind:class='{"selected": (index == curList)}'>
                                     <td @click='selectList(index, "predef")'>{{ list.get_title() }}</td>
@@ -93,10 +102,25 @@
                         </div>
                     </div>
                 </div>
-                <div class='col-xs-7'>
-                    <input v-model='gene_list_title' placeholder='Enter a Gene List Title'>
-                    <br></br>
-                    <textarea id='filter-textarea' v-model="inputList" placeholder="Type or paste your delimited genes here"></textarea>
+                <div class='col-xs-7' style="">
+                    <ul class='nav nav-tabs'>
+                        <li :class='{active: cur_tab_right=="display"}' >
+                            <a @click='cur_tab_right="display"'>Display</a>
+                        </li>
+                        <li :class='{active: cur_tab_right=="add"}' v-if="cur_tab_left==='user'">
+                            <a @click='cur_tab_right="add"'>Add Lists</a>
+                        </li>
+                    </ul>
+                    <div v-if='cur_tab_right=="display"' id='displaydiv'>
+                        <div :key="names" v-for="(names) in listType==='user'? geneLists[curList].get_members() : predefList[curList].get_members()">
+                            <div><span>{{ names }}</span></div>
+                        </div>
+                    </div>
+                    <div v-if='cur_tab_right=="add"'>
+                        <input v-model='gene_list_title' placeholder='Enter a Gene List Title'>
+                        <br></br>
+                        <textarea id='filter-textarea' v-model="inputList" placeholder="Type or paste your delimited genes here"></textarea>
+                    </div>
                 </div>
             </div>
         </div>
@@ -118,7 +142,8 @@ module.exports =
     name: 'filterGenes'
     data: () ->
         inputList: ""
-        cur_tab: "user"
+        cur_tab_left: "user"
+        cur_tab_right: "add"
         gene_list_title: ""
         curList: 0
         usingList: true
@@ -171,6 +196,7 @@ module.exports =
                 this.inputList = ''
                 return res
         selectList: (index, listType) ->
+            this.cur_tab_right = 'display'
             this.listType = listType
             this.curList = index
         removeIdx: (index) ->
@@ -182,7 +208,7 @@ module.exports =
             this.filterList()
             this.close()
         get_predef: () ->
-            this.predefList = await GeneListAPI.get_all_geneLists()
+            this.predefList = await GeneListAPI.get_all_predef_geneLists()
 
     mounted: () ->
         this.get_predef()

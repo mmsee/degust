@@ -405,7 +405,7 @@ module.exports =
                     return false
 
             # Filter by genes in user_gene_list
-            if this.current_gene_lists[this.cur_gene_list_index].get_members().length > 0 && this.use_gene_filter
+            if this.current_gene_lists.length > 0 && this.use_gene_filter
                 info_cols = this.gene_data.columns_by_type('info').map((c) -> row[c.idx])
                 matching = info_cols.filter((col) =>
                     this.current_gene_lists[this.cur_gene_list_index].get_members().includes(col.toLowerCase())
@@ -468,7 +468,7 @@ module.exports =
                 log_error("ERROR", x)
             )
         get_predef: () ->
-            this.predef_gene_lists = await GeneListAPI.get_all_geneLists()
+            this.predef_gene_lists = await GeneListAPI.get_all_predef_geneLists()
             console.log(this.predef_gene_lists)
         downloadR: () ->
             rcode = ""
