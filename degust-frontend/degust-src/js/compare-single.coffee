@@ -89,17 +89,10 @@ module.exports =
         dge_methods: []
         qc_plots: []
         showGeneList: false
-<<<<<<< ours
-        filter_gene_list: []
-=======
-        cur_gene_list: 0
-<<<<<<< HEAD
->>>>>>> theirs
-=======
+        cur_gene_list_index: 0
         list_type: 'user'
         current_full_gene_list: []
         predef_gene_lists: []
->>>>>>> 2146f00... Attempt to add predefined genelists to Degust.
         sel_conditions: []             # Array of condition names currently selected to compare
         sel_contrast: null             # Contrast if selected.  Hash with name, and columns
         cur_plot: null
@@ -175,11 +168,12 @@ module.exports =
                 heatmap_dims = this.normalizationColumns
             heatmap_dims
         user_gene_list_cache: () ->
-            if this.user_gene_lists.length == 0
-                return
-            res = {}
-            this.user_gene_lists[this.cur_gene_list].get_members().forEach((val) -> res[val] = val)
-            res
+            if this.list_type == 'user'
+                if this.user_gene_lists.length == 0
+                    return
+                res = {}
+                this.user_gene_lists[this.cur_gene_list_index].get_members().forEach((val) -> res[val] = val)
+                res
 
         #Added to show/hide counts/intensity
         is_pre_analysed: () ->
@@ -204,6 +198,13 @@ module.exports =
                 )
             res
 
+        current_gene_lists: () ->
+            # check type of list currently used.
+            if this.list_type == "user"
+                return this.user_gene_lists
+            else
+                return this.predef_gene_lists
+
     watch:
         '$route': (n,o) ->
             this.parse_url_params(n.query)
@@ -227,6 +228,8 @@ module.exports =
             this.renormalize()
         shown: () ->
             this.$emit('resize')
+        curListType: () ->
+            this.current_gene_lists()
 
     methods:
         init: () ->
@@ -255,7 +258,6 @@ module.exports =
                         this.settings.input_type = if this.settings.analyze_server_side then 'counts' else 'preanalysed'
 
                     this.load_success=true
-                    console.log(this.settings)
                     this.$nextTick(() -> this.initBackend(true))
                  ).fail((x) =>
                     log_error "Failed to get settings!",x
@@ -349,7 +351,7 @@ module.exports =
 
         hover_heatmap: (d) ->
             this.genes_hover = this.genes_highlight = Vue.noTrack([d])
-        stop_hover_heatmap: () ->
+        stop_hover_genes: () ->
             this.genes_highlight=[]
         gene_table_hover: (d) ->
             this.genes_hover = this.genes_highlight = Vue.noTrack([d])
@@ -380,11 +382,6 @@ module.exports =
             n = Number(v)
             !(isNaN(n) || n<=0)
 
-<<<<<<< ours
-        filterList: (value) ->
-            this.filter_gene_list = value
-            value
-=======
         submitList: (list) ->
             # this.user_gene_lists = list
             if this.list_type == 'user'
@@ -393,16 +390,12 @@ module.exports =
             #AJAX request via JQuery
             this.save()
         changedCurList: (index) ->
-            this.cur_gene_list = index
-<<<<<<< HEAD
->>>>>>> theirs
-=======
-        curListType: (listType) ->
-            this.list_type = listType
->>>>>>> 2146f00... Attempt to add predefined genelists to Degust.
+            this.cur_gene_list_index = index
+        curListType: (lt) ->
+            this.list_type = lt
 
         # Check if the passed row passes filters for : FDR, FC, Kegg, Filter List
-        expr_filter: (row)   ->
+        expr_filter: (row) ->
             #console.log "filter"
             if this.fcThreshold>0
                 # Filter using largest FC between any pair of samples
@@ -411,16 +404,11 @@ module.exports =
                 if Math.abs(extent_fc[0] - extent_fc[1]) < this.fcThreshold
                     return false
 
-<<<<<<< ours
-            # Filter by genes in filter_gene_list
-            if this.filter_gene_list.length > 0
-=======
             # Filter by genes in user_gene_list
-            if this.user_gene_lists.length > 0 && this.use_gene_filter
->>>>>>> theirs
+            if this.current_gene_lists[this.cur_gene_list_index].get_members().length > 0 && this.use_gene_filter
                 info_cols = this.gene_data.columns_by_type('info').map((c) -> row[c.idx])
                 matching = info_cols.filter((col) =>
-                    col.toLowerCase() of this.user_gene_list_cache
+                    this.current_gene_lists[this.cur_gene_list_index].get_members().includes(col.toLowerCase())
                 )
                 if matching.length == 0
                     return false
