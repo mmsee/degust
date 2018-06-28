@@ -112,6 +112,8 @@ module.exports =
         show_hoverDesc: false
         show_ModalExperimentDesc: false
         descTooltipLoc: [0,0]
+        use_gene_filter: true
+        stop_hover_heatmap: true
         #colour_by_condition: null  # Don't want to track changes to this!
 
     computed:

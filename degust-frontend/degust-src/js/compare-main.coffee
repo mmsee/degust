@@ -6,6 +6,8 @@ maPlot = require('./ma-plot.vue').default
 scatter = require('./scatter-plot.vue').default
 { GeneData } = require('./gene_data.coffee')
 geneTable = require('./gene-table.vue').default
+{ GeneList } = require('./gene_list.coffee')
+GeneListAPI = require('./gene_list_api.coffee')
 
 colour_highlight = "Crimson"
 colour_normal = "DarkCyan"
