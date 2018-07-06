@@ -389,13 +389,14 @@
     <filterGenes
               :show='showGeneList'
               :geneLists='user_gene_lists'
-              :predefGeneLists='predefGeneLists'
+              :predefGeneLists='predef_gene_lists'
               :curList='cur_gene_list_index'
               :usingList='use_gene_filter'
               @close='showGeneList=false'
+              @changedCurList='(val) => cur_gene_list_index = val'
+              @changedListType='(val) => list_type = val'
               @submitList='submitList'
-              @changedCurList='changedCurList'
-              @listType='curListType'>
+              >
     </filterGenes>
 
     <modalExpDesc

@@ -9,13 +9,15 @@ get_all_geneLists = (code) ->
         resolve(res)
     )
 
-get_geneList = (total, name) ->
+# name of genelist, type (user/predefined) and secure_id
+get_geneList = (name, type, code) ->
     res = total.filter((e) => e.title == name)
     console.log(res)
 
-set_geneList = (total, code) ->
-    total[total.length] = geneset
-    return 200
+add_geneList = (total, code) ->
+    return new Promise((resolve) =>
+        resolve(200)
+    )
 
 find_geneList = (total, st) ->
     if(st != "")
@@ -30,7 +32,7 @@ find_geneList = (total, st) ->
     else
         total
 
-modify_geneList = (newList) ->
+modify_geneList = (newList, code) ->
     console.log("Updated with " + newlist)
 
 #This is a fake dataset to use before the Ruby API is developed.
@@ -42,11 +44,20 @@ get_all_predef_geneLists = () =>
         resolve(res)
     )
 
+get_all_user_geneLists = () =>
+    new Promise((resolve) =>
+        a = require('./user.json')
+        # a = JSON.parse(require('./user.json')[0])
+        res = a.map((e) => new GeneList(e.title, e.members))
+        resolve(res)
+    )
+
 module.exports =
     get_geneList: get_geneList
-    set_geneList: set_geneList
+    add_geneList: add_geneList
     find_geneList: find_geneList
     modify_geneList: modify_geneList
     get_all_geneLists: get_all_geneLists
     get_all_predef_geneLists: get_all_predef_geneLists
+    get_all_user_geneLists: get_all_user_geneLists
 
