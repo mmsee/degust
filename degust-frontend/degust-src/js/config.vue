@@ -18,11 +18,14 @@
     /* Hack to improve layout of multiselect */
     .conditions .multiselect__single {display: none;}
 
-    .multiselect__option {padding: 5px; font-size: 12px; min-height: auto;}
+    .multiselect__option {padding: 5px; font-size: 12px; min-height: auto; display: flex; justify-content: space-between;}
     .multiselect__content-wrapper { border: thin solid black;}
     .multiselect--active {  z-index: 3; }  /* Make it above the slickgrid elements */
 
-    .rep_used { padding: 0 3px; background-color: #ddd; border-radius: 3px; margin-left: 10px; float: right;}
+    /* .rep_used { padding: 0 3px; background-color: #ddd; border-radius: 3px; margin-left: 10px; float: right;} */
+    .rep_container { width:100%; }
+    .rep_used { padding: 0 3px; background-color: #ddd; border-radius: 3px; margin-left: 10px; float:right;}
+    .rep_name { float:left; }
 
     .fade-enter-active, .fade-leave-active { transition: opacity .5s }
     .fade-enter, .fade-leave-to  { opacity: 0  }
@@ -182,8 +185,9 @@
                                              placeholder="Pick some"
                                              :tabindex=-1>
                                   <template slot="option" slot-scope="props">
-                                    <div>{{props.option}}
-                                        <span class='rep_used' v-for='cond in conditions_for_rep(props.option)'>{{cond}}</span>
+                                    <div class='rep_container'>
+                                      <span class='rep_name'>{{props.option}}</span>
+                                      <span class='rep_used' v-for='cond in conditions_for_rep(props.option)'>{{cond}}</span>
                                     </div>
                                   </template>
                                 </multiselect>
