@@ -50,6 +50,10 @@
         height: 30px;
         padding: 3px;
     }
+
+    input::placeholder {
+        font-size: 80%;
+    }
 </style>
 
 <template>
@@ -73,7 +77,11 @@
                             <td class='label-column'>ID Type</td>
                             <td class='input-column'><input placeholder="ID Type of Genes" v-model='idType'> <br/> <!-- dropdown menu --></td>
                         </tr>
-                        <tr v-tooltip='tip("Organism Name to be used for gene id matching")'>
+                        <tr v-tooltip='tip("Type of collection (KEGG/Reactome/GO etc.)")'>
+                            <td class='label-column'>Collection Type</td>
+                            <td class='input-column'><input v-model='collectionType' placeholder="Collection Type"/></td>
+                        </tr>
+                        <tr v-tooltip='tip("Species of the organism")'>
                             <td class='label-column'>Organism</td>
                             <td class='input-column'><input placeholder="Organism Name" v-model='organismName'> <br/> <!-- Maybe this should be dropdown menu --></td>
                         </tr>
@@ -81,7 +89,7 @@
                             <td class='label-column'>Description</td>
                             <td class='input-column'><textarea class="form-control" type="text" v-model='listDescription' placeholder="Gene List Description" id="geneListDescription"/></td>
                         </tr>
-                        <tr v-tooltip='tip("Gene List. Genes are separated by spaces, on lines or commas")'>
+                        <tr v-tooltip='tip("Genes are separated by spaces, on lines or commas")'>
                             <td class='label-column'>Gene List</td>
                             <td class='input-column'><textarea class="form-control filter-textarea" type="text" v-model="inputList" placeholder="Type or paste your delimited genes here"></textarea></td>
                         </tr>
@@ -89,7 +97,7 @@
                 </div>
             </div>
             <div slot='footer'>
-                <button class='btn btn-warning pull-left'>Clear all fields</button>
+                <button class='btn btn-warning pull-left' @click='clearAllFields'>Clear all fields</button>
                 <button class='btn btn-success' @click='addToList' :disabled="!validTotalInput">Save</button>
                 <button class="btn btn-primary" @click='closeButton'>Cancel</button>
             </div>
@@ -107,6 +115,7 @@ module.exports =
     data: () ->
         listName: ""
         idType: ""
+        collectionType: ""
         organismName: ""
         listDescription: ""
         inputList: ""
@@ -126,8 +135,8 @@ module.exports =
         tip: (txt) ->
             {content:txt, placement:'left'}
         addToList: () ->
+            # Make the genelist and then emit it to the parent.
             if this.allGeneTitles.indexOf(this.listName) == -1
-                console.log(this.allGeneTitles.findIndex((e) -> e == this.listName), this.allGeneTitles)
                 gl = new GeneList(
                     name = this.listName
                     genes = this.inputList.split(/,|\n|\t/).map((el) -> el.trim()).filter((el) -> el.length > 0)
@@ -137,6 +146,13 @@ module.exports =
             else
                 alert("Gene Name already exists!")
 
+        clearAllFields: () ->
+            this.listName = ""
+            this.idType = ""
+            this.collectionType = ""
+            this.organismName = ""
+            this.listDescription = ""
+            this.inputList = ""
         close: () ->
             this.$emit('close')
         closeButton: () ->

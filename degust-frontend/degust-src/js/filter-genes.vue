@@ -29,27 +29,20 @@
         padding: 10px;
     }
 
-    .userListTable >>> .removeList {
-        border: 1px solid #dddddd;
-        text-align: center;
-        font-weight: bolder;
-        color: #ff6666;
-        padding: 8px;
+    .userListTable button {
+        color: #bbbbbb;
+        background-color: transparent;
     }
 
-    .userListTable >>> .selected {
+    .userListTable .selected {
         border: 1px solid #000000;
         color: #00aaff;
         font-weight: bolder;
         background-color: #eeeeee;
     }
 
-    .selected .btn {
-        background-color: #eeeeee;
-    }
-
-    .removeList >>> .btn-outline-danger{
-        font-size: 8pt;
+    .userListTable button:hover {
+        color: #e3233a;
     }
 
     #displaydiv {
@@ -231,6 +224,9 @@ module.exports =
 
         # This method should probably append to list by emitting to submit?
         appendToList: (value) ->
+            # Pass to parent?
+            # this.$emit('addGeneList')
+            # On 200, emit the new genelist? Or should the gene list be emitted to the parent and then it be updated?
             if (GeneListAPI.add_geneList(this.geneLists, value) == 200)
                 console.log(value)
         selectList: (index, listType) ->
@@ -238,12 +234,15 @@ module.exports =
             this.listType = listType
             this.curList = index
         removeIdx: (index) ->
+            # if (GeneListAPI.remove_geneList(this.geneLists[this.curList].get_title(), this.code) == 200)
             if(index == this.curList)
                 this.curList = -1
                 this.user_sel = -1
             else if(index < this.curList)
                 this.curList -= 1
             this.geneLists.splice(index, 1)
+            # this.$emit(removedlist, index)
+            # or, simply call GeneListAPI.
         close: () ->
             this.$emit('close')
         closeButton: () ->

@@ -35,6 +35,11 @@ find_geneList = (total, st) ->
 modify_geneList = (newList, code) ->
     console.log("Updated with " + newlist)
 
+remove_geneList = (list_name, code) ->
+    return new Promise((resolve) =>
+        resolve(200)
+    )
+
 #This is a fake dataset to use before the Ruby API is developed.
 #Using this instead of AJAX GET/SET
 get_all_predef_geneLists = () =>
@@ -57,6 +62,7 @@ module.exports =
     add_geneList: add_geneList
     find_geneList: find_geneList
     modify_geneList: modify_geneList
+    remove_geneList: remove_geneList
     get_all_geneLists: get_all_geneLists
     get_all_predef_geneLists: get_all_predef_geneLists
     get_all_user_geneLists: get_all_user_geneLists
