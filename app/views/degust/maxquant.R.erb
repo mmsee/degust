@@ -18,9 +18,10 @@ data <- data[data$Reverse == "",] # Filter rows in reverse direction
 counts <- as.matrix(data[, count_cols])
 #Remove rows with >= 20% missing values (Missing mean NA, not 0)
 keepNonZero <- rowMeans(counts != 0) >= <%= @min_cpm %>
-keepIntensity <- rowSums(cpm(counts)> <%= @min_counts %>) >= <%= @min_cpm_samples %>
+# keepIntensity <- rowSums(cpm(counts)> <%= @min_counts %>) >= <%= @min_cpm_samples %>
 
-keep <- keepNonZero & keepIntensity
+# keep <- keepNonZero & keepIntensity
+keep <- keepNonZero
 data <- data[keep,]
 counts <- counts[keep,]
 #Variance Stabilise
