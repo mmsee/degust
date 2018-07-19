@@ -48,8 +48,8 @@
     <div>
         <div class='barcode-div' ref='barcode'>
         </div>
-        <div class='barcode-tooltip'></div>
-        <div class='barcode-tooltip-bottom'></div>
+        <div class='barcode-tooltip up'></div>
+        <div class='barcode-tooltip down'></div>
     </div>
 </template>
 
@@ -58,8 +58,8 @@
 css = {axis: 'axis', barcode: 'barcode'}
 
 #Avg function for a web worker
-avg = (e) ->
-    [arr, hw, w, weights, wormIndex] = e.data
+calc_average = (e) ->
+    [arr, hw, w, weights, dir, format] = e.data
     if !arr?
         self.postMessage({error: "Data missing"})
         return
@@ -72,37 +72,31 @@ avg = (e) ->
         self.postMessage({done: []})
         return
 
-    #Does not avoid NaN/undefined values
-    sum = (values) ->
-        n = values.length
-        i = -1
-        total = 0
-        while ++i < n
-            total += values[i]
-        total
-    _dot = (arr1, arr2, sumfunc) =>
+    _dot = (arr1, arr2) =>
         total = new Float64Array(arr1.length)
         i = -1
-        # end = arr1.length
         while(i++ < arr1.length)
             total[i] = arr1[i] * arr2[i]
-        res = sum(total)
+        res = total.reduce((a,b) -> a + b)
         return res
 
-    end = arr.length - hw
-    i = hw - 1
+    end = (arr.length - hw)
+    i = hw
     result = new Float64Array(arr.length - hw * 2)
-    while (i++ <= end)
+    while (i <= end)
         result[i-hw] = _dot(arr.slice(i-hw, i+hw+1), weights.weights)
-    # adjust ends
-    i = -1
-    half_csum = weights.csum.slice(w-hw, w-1)
-    end = half_csum.length - 1
-    while i++ < end
-        result[i] = result[i] / half_csum[i]
-        result[end - i] / half_csum[i]
+        i++
 
-    postMessage({done: result, index: wormIndex})
+    # Scale tails to moderate padded zeroes from mean.
+    i = 0
+    half_csum = weights.csum.slice(w-hw, w-1)
+    end = hw - 1
+    while(i < end)
+        result[i] = result[i] / half_csum[i]
+        zzz = result[result.length - 1 - i] / half_csum[i]
+        result[result.length - 1 - i] = zzz
+        i++
+    postMessage({done:result, dir:dir, format:format})
     close()
 
 #Make barcode plot object
@@ -123,37 +117,36 @@ class BarcodePlot
         this.elem = d3.select(this.opts.elem).append('div')
         # this.elem.attr('class'. css.barcode)
 
-        if this.opts.width
-            this.elem.style('width', this.opts.width+'px')
-        if this.opts.height
-            this.elem.style('height', this.opts.height+'px')
+        # Initialise width and height
+        this.width = this.opts.width || this.elem.node().clientWidth
+        this.height = this.opts.height || this.elem.node().clientHeight
+        this.elem.style('width', this.width+'px')
+        this.elem.style('height', this.height+'px')
 
         #Web worker for calculating moving average
-        this.worker = [new WorkerWrapper(avg, (d) => this._worker_callback(d)), new WorkerWrapper(avg, (d) => this._worker_callback(d))]
+        this.worker = {Up:new WorkerWrapper(calc_average, (d) => this._worker_callback(d)), Down:new WorkerWrapper(calc_average, (d) => this._worker_callback(d))}
         this.wormVal = {}
 
         #Initialise SVG's
         # May want to consider using canvas because 11K+ rectangles is a lot
         this.svg = this.elem.append('svg')
         this.gRect = this.svg
+        this.svg.attr('width', this.width)
+                .attr('height', this.height)
 
         #If brush - Initialise it here - No brush support yet
         this.dispatch = d3.dispatch('mouseover', 'mouseout')
         #This calls the resize which calls the redraw
+        #Also sets the size correctly. Calling redraw directly, it would fail.
         this.resize()
 
     _worker_callback: (d) ->
         if d.error?
             log_error("Worker error : #{d.error}")
         # if d.upto?
-        #     this._show_calc_info("Clustered #{d.upto} of #{this.data.length}")
+        #     this._draw_worm(d.upto, d.dir, d.format, d.i)
         if d.done?
-            this.wormVal['w'+d.index] = {data: d.done, id: if d.index == 1 then Object.keys(this.geneListUp).join() else Object.keys(this.geneListDown).join()}
-            # this.wormVal['w'+d.index].data = d.done
-            # this.wormVal['w'+d.index].id = 'aaaa'
-            this.redraw()
-        # if d.took?
-        #     log_debug("calc_order: took=#{d.took}ms for #{this.data.length} points")
+            this._draw_worm(d.done, d.dir, d.format)
 
     resize: () ->
         this.width = this.opts.width || this.elem.node().clientWidth
@@ -164,17 +157,29 @@ class BarcodePlot
 
     #returns the appropriate redraw function for double/single plots
     redraw: () ->
-        this.redraw_single()
-        if this.opts.double && Object.keys(this.geneListDown).length > 0
-            this.redraw_double()
+        # Setup various heights for each of the two plots
+        bDUp = {dir:'Up', y_top:50, r_height:75, r_highlight_top:25, r_highlight_height:100, b_top:90, b_bottom:125, tt_height:50, colour:'#b0051b'}
+        bDDown = {dir:'Down', y_top:125, r_height:75, r_highlight_top:125, r_highlight_height:100, b_top:125, b_bottom:160, tt_height:275, colour:'#0571b0'}
 
-    redraw_single: () ->
-        if !this.data
+        # Always draw one, if second is selected, draw second if we don't want to enable the drawing of the second, don't make a second select for geneListDown
+        # Need to find a way to ONLY redraw upon selection of a change and not loop itself.
+        # if plot first
+        this._redraw_single(this.data, bDUp)
+        if Object.keys(this.geneListDown).length > 0 # && plot second
+            this._redraw_single(this.data, bDDown)
+
+    _redraw_single: (data, format) ->
+        {dir, y_top, r_height, r_highlight_top, r_highlight_height, b_top, b_bottom, tt_height, colour} = format
+        if !data
+            console.log("No data provided to Barcode plot")
             return
-        this.x_val = x_val = (d) =>
+
+        # Define funciton to get x values from barcode col
+        x_val = (d) =>
             this.barcodeCol.get(d)
 
-        this.xdomain = xdomain = d3.extent(this.data, (d) => x_val(d)).map((x) => x)
+        # define a x-domain
+        xDomain = d3.extent(data, (d) => x_val(d)).map((x) => x)
 
         this.xScale = xScale = d3.scale.linear()
             .domain([0, this.data.length])
@@ -184,39 +189,67 @@ class BarcodePlot
         # rect_new - New points to add
         # .exit - Remove old
         # .enter - Add new
-        kept = this.data.filter((d) => this.opts.filterFunc(d, this.geneListUp))
-        rects = this.svg.selectAll('rect')
+        kept = this.data.filter((d) => this.opts.filterFunc(d, this['geneList'+dir])) # Future refactor may miss this
+        rects = this.svg.selectAll('rect'+'.'+dir)
                         .data(kept.reverse())
-
         # Remove ALL old points
         rects.exit().remove()
-        this.svg.selectAll('path').remove()
+        this.svg.selectAll('path'+'.'+dir).remove()
         this.svg.selectAll('g').remove()
 
-        div = d3.select('.barcode-tooltip')
+        div = d3.select('.barcode-tooltip'+'.'+dir)
 
         #Append data
         rects.enter().append('rect')
-                .style('fill', '#b0051b')
-                .attr('height', 75)
+                .style('fill', colour)
+                .attr('class', dir)
+                .attr('height', r_height)
                 .attr('width', 1)
-                .attr('y', 50)
+                .attr('y', y_top)
+
+        rank_ordering = data.map((e) -> e.sign)
+        #Find first value
+        right_val = rank_ordering.indexOf(rank_ordering.find((e) -> e > Math.SQRT2))
+        #Find last value
+        left_val = rank_ordering.indexOf(rank_ordering.filter((e) -> e < (-1 * Math.SQRT2)).pop())
+        _rectPathStr = (left, right, top, bot) ->
+            return 'M ' + left + ',' + top + ', L ' + left + ',' + bot + ', L ' + right + ',' + bot + ', L ' + right + ',' + top + ', Z'
+        #   red
+        this.svg.insert('path', 'rect')
+                .attr('class', dir)
+                .style('stroke', '#ff6961')
+                .style('fill', '#ff6961')
+                .attr('d', _rectPathStr(this.xScale(xDomain[0]), this.xScale(left_val), b_top, b_bottom))
+        #   grey
+        this.svg.insert('path', 'rect')
+                .attr('class', dir)
+                .style('stroke', 'adadad')
+                .style('fill', 'adadad')
+                .attr('d', _rectPathStr(this.xScale(left_val), this.xScale(right_val), b_top, b_bottom))
+        #   blue
+        this.svg.insert('path', 'rect')
+                .attr('class', dir)
+                .style('stroke', '#61a8ff')
+                .style('fill', '#61a8ff')
+                .attr('d', _rectPathStr(this.xScale(right_val), this.xScale(xDomain[1]), b_top, b_bottom))
 
         #dispatch for hover event
         rects.attr('x',(d) => xScale(x_val(d)))
-                .attr('class', (d) => 'rect' + d.id + ' ' + 'up')
+                .attr('class', (d) => 'rect' + d.id + ' ' + dir)
                 .on('mouseover', (d, loc) =>
-                    d3.select('.rect'+d.id)
+                    d3.select('.rect' + d.id + '.'+dir)
                         .transition().duration(20)
                         .ease('linear')
-                        .attr('y',25)
-                        .attr('height', 100)
+                        .attr('y',r_highlight_top)
+                        .attr('height', r_highlight_height)
                         .attr('width', 3)
                         .style('fill', 'red')
 
+                    #this.svg.append other opposite rect if exists?
+
                     tooltipText = ''
                     d.infoCols.forEach((el) =>
-                        tooltipText = tooltipText.concat("<b>"+el.idx+"</b>" + ": " + d[el.idx] + "<br />")
+                        tooltipText = tooltipText.concat("<b>"+el.idx+"</b>" + ": " + d[el.idx] + "<br/>")
                     )
                     div_right = d3.select('.barcode-div').node().getBoundingClientRect().right
                     #Tooltip width and height
@@ -226,338 +259,143 @@ class BarcodePlot
                         .style('opacity', 1)
                         .style('position', 'absolute')
                         .style('min-width', tt_width + 'px')
-                        .style('left', if (d3.select('.rect'+d.id+'.up').node().getBoundingClientRect().left + tt_width < div_right) then (tt_left) + 'px' else (tt_left - tt_width) + 'px')
-                        .style("top", (50) + "px")
-                    div.html('<span>' + tooltipText+ '</span>')
+                        .style('left', if (d3.select('.rect'+d.id+'.'+dir).node().getBoundingClientRect().left + tt_width < div_right) then (tt_left) + 'px' else (tt_left - tt_width) + 'px')
+                        .style("top", (tt_height) + "px")
+                    div.html('<span>' + tooltipText + '</span>')
                     this.dispatch.mouseover(d)
                 )
                 .on('mouseout', (d, loc) =>
-                    d3.select('.rect'+d.id+'.up')
+                    d3.select('.rect' + d.id + '.'+dir)
                         .transition().duration(100)
                         .ease('linear')
-                        .attr('height', 75)
+                        .attr('height', r_height)
                         .attr('width', 1)
-                        .attr('y', 50)
-                        .style('fill', '#b0051b')
+                        .attr('y', y_top)
+                        .style('fill', colour)
                     div.transition(25)
                         .style('opacity', 0)
 
-                    d3.select('.rect'+d.id+'.down')
-                        .transition().duration(100)
-                        .ease('linear')
-                        .attr('y', 125)
-                        .attr('height', 75)
-                        .attr('width', 1)
-                        .style('fill', '#0571b0')
+                    # d3.select('.rect'+d.id+'.down')
+                    #     .transition().duration(100)
+                    #     .ease('linear')
+                    #     .attr('y', 125)
+                    #     .attr('height', 75)
+                    #     .attr('width', 1)
+                    #     .style('fill', '#0571b0')
                 )
 
-        # Insert Background
-        #Top & Bottom
-        background_top = 90
-        background_bottom = 125
-        # unit_width = xScale(xdomain[1])/5
-        # left_edge = xScale(xdomain[0])
+        # Add worm somehow.
+        # Calculate worm first?
+        # Then horizontal line?
+        #Get vector of 1/0's
+        #Pass to function which produces the appropriate data and await?
+        #Just fire it here. Have separate function to draw.
 
-        rank_ordering = this.data.map((e) -> e.sign)
-        #Find first value
-        right_val = rank_ordering.indexOf(rank_ordering.find((e) -> e > Math.SQRT2))
-        #Find last value
-        left_val = rank_ordering.indexOf(rank_ordering.filter((e) -> e < (-1 * Math.SQRT2)).pop())
+        # this.svg.selectAll('.worm').remove()
 
-        _rectPathStr = (left, right, top, bot) ->
-            return 'M ' + left + ',' + top + ', L ' + left + ',' + bot + ', L ' + right + ',' + bot + ', L ' + right + ',' + top + ', Z'
-        #   red
-        this.svg.insert('path', 'rect')
-                .style('stroke', '#ff6961')
-                .style('fill', '#ff6961')
-                .attr('d', _rectPathStr(xScale(xdomain[0]), xScale(left_val), background_top, background_bottom))
-        #   grey
-        this.svg.insert('path', 'rect')
-                .style('stroke', 'adadad')
-                .style('fill', 'adadad')
-                .attr('d', _rectPathStr(xScale(left_val), xScale(right_val), background_top, background_bottom))
-        #   blue
-        this.svg.insert('path', 'rect')
-                .style('stroke', '#61a8ff')
-                .style('fill', '#61a8ff')
-                .attr('d', _rectPathStr(xScale(right_val), xScale(xdomain[1]), background_top, background_bottom))
+        this._calc_worm(kept, xDomain, this.worker[dir], dir, format)
 
-        # Append Worm
-        #Generate worm points
-        if this.wormVal.w1? && (this.wormVal.w1.id == this.curW1)
-            worm_data = Array.prototype.slice.call(this.wormVal.w1.data).map((e, k, a) -> {x: k, y:e})
-            avg = kept.length / this.data.length
-            avg_data = worm_data.map((e) -> {x: e.x, y: avg})
-            yScale1Extent = [d3.extent(worm_data.map((e) -> e.y))[1], 0]
-            this.yScale = yScale = d3.scale.linear()
-                .domain(yScale1Extent)
-                .range([this.opts.margin_t, this.height * 0.35])
+    _calc_worm: (d, domain, worker, dir, format) ->
+        #Weight of last value looks like it's too small
+        #csum typically > 1 appears like it might be floating point error?
+        #If we generate half the weights, then reverse it and append it's 100% symmetrical?
+        _weights = (n) ->
+            if n <= 1
+                return [0]
+            wt = new Float64Array(n)
+            csum = new Float64Array(n)
+            i = -1
+            j = 1
+            h_len_ceil = Math.ceil(n/2)
+            h_len_floor = Math.floor(n/2)
+            squeeze = n / (n + 1)
+            while(i++ <= n)
+                wt[i] = ( (j - h_len_ceil) / h_len_floor ) * squeeze
+                wt[i] = (1 - Math.abs(wt[i]) ** 3) ** 3
+                j++
+            # Scale down to correct size
+            #
+            wt_total = wt.reduce((a,b) -> a + b)
+            wt.forEach((e,i,a) -> a[i] = e / wt_total)
+            # Initialise csum
+            csum[0] = wt[0]
+            i = 1
+            while(i++ < n)
+                csum[i] = csum[i - 1] + wt[i]
 
-            yaxis = d3.svg.axis()
-                    .scale(yScale)
-                    .orient('left')
-                    .tickValues([0,yScale1Extent[0]/2,yScale1Extent[0]])
+            {weights: wt, csum: csum}
+        _avg = (arr, hw, w, dir, format, worker) ->
+            #call web worker
+            worker.start([arr, hw, w, _weights(w), dir, format])
 
-            this.svg.append('g')
-                .attr('class', 'axis')
+        all_ranks = [domain[0]..domain[1]]
+
+        res = all_ranks.map((all_el) => d.map((d_e) => d_e.rank).includes(all_el) + 0)
+        hav = d.length/all_ranks.length
+        #Ensure window is odd in length
+        window_width = Math.floor((all_ranks.length * 0.45) / 2) * 2 + 1
+        halfWindow_width = Math.floor(window_width / 2)
+        # Pad out ends of array with mean of halfwidth to reduce artefact of having padded with zeroes
+        wk = Array(halfWindow_width).fill(0).concat(res.concat(Array(halfWindow_width).fill(0)))
+        avg = _avg(wk, halfWindow_width, window_width, dir, format, worker)
+
+    _draw_worm: (worm_data, dir, format) ->
+        worm_data_obj = Array.prototype.slice.call(worm_data).map((e, k, a) -> {x: k, y:e})
+        avg = d3.mean(worm_data)
+        avg_data = worm_data_obj.map((e) -> {x: e.x, y: avg}) #This is probably totally unecessary for this.
+
+        scale_format = {Up : [this.opts.margin_t, this.height * 0.35], Down:[this.height * 0.65, this.height - this.opts.margin_b]}
+        yScale_extent = {Up: [d3.max(worm_data), 0], Down:[0, d3.max(worm_data)]}
+        cols = {Up:'#970417', Down:'#04517e'}
+
+        #Append axis
+        yScale = d3.scale.linear()
+            .domain(yScale_extent[dir])
+            .range(scale_format[dir])
+
+        yaxis = d3.svg.axis()
+                .scale(yScale)
+                .orient('left')
+                .tickValues([0, d3.max(worm_data)/2, d3.max(worm_data)])
+
+        this.svg.selectAll('.worm.'+dir).remove()
+
+        this.svg.append('g')
+                .attr('class', 'axis worm '+dir)
                 .attr('transform', 'translate('+this.opts.margin_l+',0)')
                 .call(yaxis)
 
-            lf = d3.svg.line()
-                .x((d) => xScale(d.x))
-                .y((d) => yScale(d.y))
-                .interpolate('basis')
+        #xScale comes from global scope
+        lf = d3.svg.line()
+            .x((d) => this.xScale(d.x))
+            .y((d) => yScale(d.y))
+            .interpolate('basis')
 
-            # this.svg.insert('path', 'rect')
-            this.svg.append('path')
-                .attr('stroke', '#970417')
-                .attr('fill', 'none')
-                .attr("stroke-width", 2)
-                .attr('d', lf(worm_data))
+        # this.svg.insert('path', 'rect')
+        this.svg.append('path')
+            .attr('class', 'path worm '+dir)
+            .attr('stroke', cols[dir])
+            .attr('fill', 'none')
+            .attr("stroke-width", 2)
+            .attr('d', lf(worm_data_obj))
 
-            # Add median/mean graph of values
-            this.svg.append('path')
-                .attr('stroke', 'black')
-                .attr('fill', 'none')
-                .attr("stroke-width", 1.5)
-                .style("stroke-dasharray", "4,4")
-                .attr('d', lf(avg_data))
-            # this.wormVal.w1 = undefined
-        else
-            this._worm_calc(kept, xdomain, this.worker[0], 1)
-
-    #Need to develp more genesets FIRST
-    redraw_double: () ->
-        keptDown = this.data.filter((d) => this.opts.filterFunc(d, this.geneListDown))
-        div = d3.select('.barcode-tooltip-bottom')
-
-        rectsDown = this.svg.selectAll('.rect.down')
-                            .data(keptDown.reverse())
-        rectsDown.exit().remove()
-        rectsDown.enter().append('rect')
-                .style('fill', '#0571b0')
-                .attr('height', 75)
-                .attr('width', 1)
-                .attr('y', 125)
-
-        rectsDown.attr('x',(d) => this.xScale(this.x_val(d)))
-                .attr('class', (d) => 'rect' + d.id + ' ' + 'down')
-                .on('mouseover', (d, loc) =>
-                    d3.select('.rect.down'+d.id)
-                        .transition().duration(20)
-                        .ease('linear')
-                        .attr('y',125)
-                        .attr('height', 100)
-                        .attr('width', 3)
-                        .style('fill', 'red')
-
-                    tooltipText = ''
-                    d.infoCols.forEach((el) =>
-                        tooltipText = tooltipText.concat("<b>"+el.idx+"</b>" + ": " + d[el.idx] + "<br />")
-                    )
-                    div_right = d3.select('.barcode-div').node().getBoundingClientRect().right
-                    #Tooltip width and height
-                    tt_left = this.xScale(this.x_val(d)) + 25
-                    tt_width = 225
-                    div.transition(25)
-                        .style('opacity', 1)
-                        .style('position', 'absolute')
-                        .style('min-width', tt_width + 'px')
-                        .style('left', if (d3.select('.rect'+d.id+".down").node().getBoundingClientRect().left + tt_width < div_right) then (tt_left) + 'px' else (tt_left - tt_width) + 'px')
-                        .style("bottom", (0 + (d.infoCols.length + 1) * 11) + "px")
-                    div.html('<span>' + tooltipText+ '</span>')
-                    this.dispatch.mouseover(d)
-                )
-                .on('mouseout', (d, loc) =>
-                    d3.select('.rect'+d.id+'.down')
-                        .transition().duration(100)
-                        .ease('linear')
-                        .attr('height', 75)
-                        .attr('width', 1)
-                        .attr('y', 125)
-                        .style('fill', '#0571b0')
-                    div.transition(25)
-                        .style('opacity', 0)
-
-                    d3.select('.rect'+d.id+'.up')
-                        .transition().duration(100)
-                        .ease('linear')
-                        .attr('y', 50)
-                        .attr('height', 75)
-                        .attr('width', 1)
-                        .style('fill', '#b0051b')
-                )
-
-        background_top = 125
-        background_bottom = 160
-        rank_ordering = this.data.map((e) -> e.sign)
-        #Find first value
-        right_val = rank_ordering.indexOf(rank_ordering.find((e) -> e > Math.SQRT2))
-        #Find last value
-        left_val = rank_ordering.indexOf(rank_ordering.filter((e) -> e < (-1 * Math.SQRT2)).pop())
-
-        _rectPathStr = (left, right, top, bot) ->
-            return 'M ' + left + ',' + top + ', L ' + left + ',' + bot + ', L ' + right + ',' + bot + ', L ' + right + ',' + top + ', Z'
-        #   red
-        this.svg.insert('path', 'rect')
-                .style('stroke', '#ff6961')
-                .style('fill', '#ff6961')
-                .attr('d', _rectPathStr(this.xScale(this.xdomain[0]), this.xScale(left_val), background_top, background_bottom))
-        #   grey
-        this.svg.insert('path', 'rect')
-                .style('stroke', 'adadad')
-                .style('fill', 'adadad')
-                .attr('d', _rectPathStr(this.xScale(left_val), this.xScale(right_val), background_top, background_bottom))
-        #   blue
-        this.svg.insert('path', 'rect')
-                .style('stroke', '#61a8ff')
-                .style('fill', '#61a8ff')
-                .attr('d', _rectPathStr(this.xScale(right_val), this.xScale(this.xdomain[1]), background_top, background_bottom))
-
-        # Append Worm
-        #Generate worm points
-        if this.wormVal.w2? && (this.wormVal.w2.id == this.curW2)
-            worm_data = Array.prototype.slice.call(this.wormVal.w2.data).map((e, k, a) -> {x: k, y:e})
-            avg = keptDown.length / this.data.length
-            avg_data = worm_data.map((e) -> {x: e.x, y: avg})
-
-            yScale2Extent = [0, d3.extent(worm_data.map((e) -> e.y))[1]]
-
-            this.yScale2 = yScale2 = d3.scale.linear()
-                .domain(yScale2Extent)
-                .range([this.height * 0.65, this.height - this.opts.margin_b])
-
-            yaxis2 = d3.svg.axis()
-                    .scale(this.yScale2)
-                    .orient('left')
-                    .tickValues([0,yScale2Extent[1]/2,yScale2Extent[1]])
-
-            this.svg.append('g')
-                .attr('class', 'axis')
-                .attr('transform', 'translate('+this.opts.margin_l+',0)')
-                .call(yaxis2)
-
-            lf = d3.svg.line()
-                .x((d) => this.xScale(d.x))
-                .y((d) => this.yScale2(d.y))
-                .interpolate('basis')
-
-            # this.svg.insert('path', 'rect')
-            this.svg.append('path')
-                .attr('stroke', '#04517e')
-                .attr('fill', 'none')
-                .attr("stroke-width", 2)
-                .attr('d', lf(worm_data))
-
-            # Add median/mean graph of values
-            this.svg.append('path')
-                .attr('stroke', 'black')
-                .attr('fill', 'none')
-                .attr("stroke-width", 1.5)
-                .style("stroke-dasharray", "4,4")
-                .attr('d', lf(avg_data))
-            # this.wormVal.w2 = undefined
-        else
-            this._worm_calc(keptDown, this.xdomain, this.worker[1], 2)
-
-
-    reFilter: () ->
-        if !this.data
-            return
-        this.redraw()
+        # Add median/mean graph of values
+        this.svg.append('path')
+            .attr('class', 'path worm '+dir)
+            .attr('stroke', 'black')
+            .attr('fill', 'none')
+            .attr("stroke-width", 1.5)
+            .style("stroke-dasharray", "4,4")
+            .attr('d', lf(avg_data))
 
     update_data: (data, barcodeCol, geneListUp, geneListDown) ->
         this.data = data
         this.barcodeCol = barcodeCol
         this.geneListUp = geneListUp
         this.geneListDown = geneListDown
-        this.curW1 = Object.keys(geneListUp).join()
-        this.curW2 = Object.keys(geneListDown).join()
+        # this.curW1 = Object.keys(geneListUp).join()
+        # this.curW2 = Object.keys(geneListDown).join()
         this.redraw()
-
-    on: (t,func) ->
-        this.dispatch.on(t, func)
-
-    _worm_calc: (d, domain, worker, wormIndex) ->
-        _weights = (n) ->
-            if n <= 1
-                return [0]
-            val = new Float64Array([0 ... n])
-            i = -1
-            end = val.length
-            while(i++ < end)
-                val[i] = 1 - Math.abs(2 * ((val[i]) / (val[n - 1])) - 1) ** 3
-
-            total = val.reduce((a,b) -> a+b)
-            csum = new Float64Array(n)
-            val[0] = val[0] / total
-
-            #Catch first/last == 0
-            end = val.length - 1
-            if val[0] == 0
-                val[0] = val[val.length-1] = (val[1] / 2) / total
-            csum[0] = val[0]
-            i = 0
-            while(i++ <= end)
-                val[i] = val[i] / total
-                csum[i] = val[i] + csum[i-1]
-
-            {weights: val, csum: csum}
-        _avg = (arr, hw, w, wormIndex, worker) ->
-            #call web worker
-            worker.start([arr, hw, w, _weights(w), wormIndex])
-
-        all_ranks = [domain[0]...domain[1]]
-        #Coerce to list of 1 and 0
-        res = all_ranks.map((all_el) => d.map((d_e) => d_e.rank).includes(all_el) + 0)
-
-        hav = d.length/all_ranks.length
-        #pad L and R with zeroes
-        window_width = Math.floor((all_ranks.length * 0.45) / 2) * 2 + 1
-        halfWindow_width = Math.floor(window_width / 2)
-
-        # Pad out ends of array with mean of halfwidth to reduce artefact of having padded with zeroes
-        wk = Array(halfWindow_width).fill(0).concat(res.concat(Array(halfWindow_width + 1).fill(0)))
-
-        avg = _avg(wk, halfWindow_width, window_width, wormIndex, worker)
-
-    highlight: (d) ->
-        _reset = () =>
-            this.svg.selectAll('rect')
-                .transition().duration(75)
-                .ease('linear')
-                .attr('width', 1)
-            this.svg.selectAll('rect.up')
-                .style('fill', '#b0051b')
-                .attr('height', 75)
-                .attr('y', 50)
-
-            this.svg.selectAll('rect.down')
-                .style('fill', '#0571b0')
-                .attr('height', 75)
-                .attr('y', 125)
-
-
-        if d.length > 0
-            _reset()
-            d3.select('.rect'+d[0].id+'.up')
-                .transition().duration(100)
-                .ease('linear')
-                .attr('y', 25)
-                .attr('height', 100)
-                .attr('width', 3)
-                .style('fill', 'red')
-
-            d3.select('.rect'+d[0].id+'.down')
-                .transition().duration(100)
-                .ease('linear')
-                .attr('y',125)
-                .attr('height', 100)
-                .attr('width', 3)
-                .style('fill', 'red')
-
-        else
-            _reset()
 
 resize = require('./resize-mixin.coffee')
 
@@ -639,10 +477,12 @@ module.exports =
     watch:
         needsUpdate: () ->
             this.update()
+
         # filterChanged: () ->
         #     this.reFilter()
-        highlight: (d) ->
-            this.me.highlight(d)
+
+        # highlight: (d) ->
+        #     this.me.highlight(d)
 
     methods:
         update:() ->
@@ -694,6 +534,6 @@ module.exports =
             height: 250
             barcodeCol: this.barcodeCol
         )
-        this.me.on('mouseover', (d) => this.$emit('mouseover', d))
+        # this.me.on('mouseover', (d) => this.$emit('mouseover', d))
         # this.update()
 </script>
