@@ -32,6 +32,7 @@
     .userListTable button {
         color: #bbbbbb;
         background-color: transparent;
+        padding: 0%;
     }
 
     .userListTable .selected {

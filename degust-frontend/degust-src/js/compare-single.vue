@@ -358,7 +358,7 @@
                         @dimension='v => mdsDimension = v'
                         >
                 </mds-plot>
-                <div v-if='cur_plot=="barcode" && user_gene_lists.length == 0'>
+                <div v-if='cur_plot=="barcode" && (user_gene_lists.length == 0 || (geneFilterTop == -1 && geneFilterBottom == -1))'>
                   <h4>Please enter/select a Gene Set</h4>
                 </div>
                 <barcode-plot v-else-if='cur_plot=="barcode"'

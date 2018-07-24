@@ -116,8 +116,8 @@ module.exports =
         descTooltipLoc: [0,0]
         use_gene_filter: true # We probably want this to be true by default.
         stop_hover_heatmap: true
-        geneFilterTop: "None"
-        geneFilterBottom: "None"
+        geneFilterTop: -1
+        geneFilterBottom: -1
         #colour_by_condition: null  # Don't want to track changes to this!
 
     computed:
