@@ -95,7 +95,7 @@
             <!-- New row for the barcode plot -->
             <div class='row'>
               <div v-if='datasets.length > 0'>
-                <h1>SEND HELP</h1>
+                <h1>PlotHere</h1>
                 <div v-for='(dataset, idx) in datasets' :key='idx'>
                   <multiselect v-model="aa" :options='barcode_data[idx]' label='name' :allow-empty="false" :searchable="false" :close-on-select="true" :show-labels="false" placeholder="--- Required ---" />
                 </div>

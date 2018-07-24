@@ -223,23 +223,26 @@
                 </div>
               </div><!-- div.pca-opts -->
               <div v-show='cur_plot=="barcode"'>
+                <div v-tooltip="tip('Select a column to order the barcode plot by')">
+                  <label>Order by</label>
+                    <select v-model='barcodeOrderCol'>
+                      <option :value='-1'>None</option>
+                      <option v-for='(fc_col, i) in fc_calc_columns' :value='i'>{{fc_col.name}}</option>
+                    </select>
+                </div>
                 <div v-tooltip="tip('Select a gene set to test for enrichment')">
                   <label>Genes Up</label>
-                  <select v-model='geneFilterTop'>
-                    <option :value='-1'>None</option>
-                    <option v-for='(geneList, i) in user_gene_lists' :value='i'>{{geneList.title}}</option>
+                    <select v-model='geneFilterTop'>
+                      <option :value='-1'>None</option>
+                      <option v-for='(geneList, i) in user_gene_lists' :value='i'>{{geneList.title}}</option>
                     </select>
-
-                  </select>
                 </div>
                 <div v-tooltip="tip('Select a gene-set to test for enrichment')">
                   <label>Genes Down</label>
-                  <select v-model='geneFilterBottom'>
-                    <option :value='-1'>None</option>
-                    <option v-for='(geneList, i) in user_gene_lists' :value='i'>{{geneList.title}}</option>
+                    <select v-model='geneFilterBottom'>
+                      <option :value='-1'>None</option>
+                      <option v-for='(geneList, i) in user_gene_lists' :value='i'>{{geneList.title}}</option>
                     </select>
-
-                  </select>
                 </div>
               </div><!-- div.barcode-opts-->
             </div>
@@ -358,7 +361,7 @@
                         @dimension='v => mdsDimension = v'
                         >
                 </mds-plot>
-                <div v-if='cur_plot=="barcode" && user_gene_lists.length == 0'>
+                <div v-if='cur_plot=="barcode" && (user_gene_lists.length == 0 || (geneFilterTop == -1 && geneFilterBottom == -1))'>
                   <h4>Please enter/select a Gene Set</h4>
                 </div>
                 <barcode-plot v-else-if='cur_plot=="barcode"'
@@ -371,7 +374,7 @@
                   :filter-ext='expr_filter'
                   :filter-changed='filter_changed'
                   :info-cols='info_columns'
-                  :double='true'
+                  :order-col='barcodeOrderCol'
                   :highlight='genes_highlight'
                   @mouseover='v => hover_genes(v)'
                   @keepHighlight='set_genes_selected'

@@ -37,11 +37,6 @@
         stroke: black;
         shape-rendering: crispEdges;
     }
-
-    .axis text {
-        font-family: sans-serif;
-        font-size: 11px;
-    }
 </style>
 
 <template>
@@ -59,6 +54,7 @@ css = {axis: 'axis', barcode: 'barcode'}
 
 #Avg function for a web worker
 calc_average = (e) ->
+
     [arr, hw, w, weights, dir, format] = e.data
     if !arr?
         self.postMessage({error: "Data missing"})
@@ -73,11 +69,18 @@ calc_average = (e) ->
         return
 
     _dot = (arr1, arr2) =>
+        _sum = (values) ->
+            n = values.length
+            i = -1
+            total = 0
+            while ++i < n
+                total += values[i]
+            total
         total = new Float64Array(arr1.length)
         i = -1
         while(i++ < arr1.length)
             total[i] = arr1[i] * arr2[i]
-        res = total.reduce((a,b) -> a + b)
+        res = _sum(total)
         return res
 
     end = (arr.length - hw)
@@ -93,8 +96,7 @@ calc_average = (e) ->
     end = hw - 1
     while(i < end)
         result[i] = result[i] / half_csum[i]
-        zzz = result[result.length - 1 - i] / half_csum[i]
-        result[result.length - 1 - i] = zzz
+        result[result.length - 1 - i] = result[result.length - 1 - i] / half_csum[i]
         i++
     postMessage({done:result, dir:dir, format:format})
     close()
@@ -126,18 +128,24 @@ class BarcodePlot
         #Web worker for calculating moving average
         this.worker = {Up:new WorkerWrapper(calc_average, (d) => this._worker_callback(d)), Down:new WorkerWrapper(calc_average, (d) => this._worker_callback(d))}
         this.wormVal = {}
-
+        this.worm_scale = 'auto'
         #Initialise SVG's
         # May want to consider using canvas because 11K+ rectangles is a lot
         this.svg = this.elem.append('svg')
         this.gRect = this.svg
         this.svg.attr('width', this.width)
                 .attr('height', this.height)
+                .attr('viewBox', "0 0 " + this.width + " " + this.height)
 
         #If brush - Initialise it here - No brush support yet
         this.dispatch = d3.dispatch('mouseover', 'mouseout')
-        #This calls the resize which calls the redraw
-        #Also sets the size correctly. Calling redraw directly, it would fail.
+
+        this.bDUp = {dir:'Up', y_top:50, r_height:75, r_highlight_top:25, r_highlight_height:100, b_top:90, b_bottom:125, tt_height:50, colour:'#b0051b'}
+        this.bDDown = {dir:'Down', y_top:125, r_height:75, r_highlight_top:125, r_highlight_height:100, b_top:125, b_bottom:160, tt_height:275, colour:'#0571b0'}
+
+        # this.timer = 0
+        this._make_menu(this.opts.elem)
+
         this.resize()
 
     _worker_callback: (d) ->
@@ -155,18 +163,25 @@ class BarcodePlot
                 .attr('height', this.height)
         this.redraw()
 
+    on: (t,func) ->
+        this.dispatch.on(t, func)
+
     #returns the appropriate redraw function for double/single plots
     redraw: () ->
         # Setup various heights for each of the two plots
-        bDUp = {dir:'Up', y_top:50, r_height:75, r_highlight_top:25, r_highlight_height:100, b_top:90, b_bottom:125, tt_height:50, colour:'#b0051b'}
-        bDDown = {dir:'Down', y_top:125, r_height:75, r_highlight_top:125, r_highlight_height:100, b_top:125, b_bottom:160, tt_height:275, colour:'#0571b0'}
+
 
         # Always draw one, if second is selected, draw second if we don't want to enable the drawing of the second, don't make a second select for geneListDown
         # Need to find a way to ONLY redraw upon selection of a change and not loop itself.
         # if plot first
-        this._redraw_single(this.data, bDUp)
+        if Object.keys(this.geneListUp).length > 0
+            this._redraw_single(this.data, this.bDUp)
+        else
+            this.svg.selectAll('.Up').remove()
         if Object.keys(this.geneListDown).length > 0 # && plot second
-            this._redraw_single(this.data, bDDown)
+            this._redraw_single(this.data, this.bDDown)
+        else
+            this.svg.selectAll('.Down').remove()
 
     _redraw_single: (data, format) ->
         {dir, y_top, r_height, r_highlight_top, r_highlight_height, b_top, b_bottom, tt_height, colour} = format
@@ -213,7 +228,7 @@ class BarcodePlot
         #Find last value
         left_val = rank_ordering.indexOf(rank_ordering.filter((e) -> e < (-1 * Math.SQRT2)).pop())
         _rectPathStr = (left, right, top, bot) ->
-            return 'M ' + left + ',' + top + ', L ' + left + ',' + bot + ', L ' + right + ',' + bot + ', L ' + right + ',' + top + ', Z'
+            return 'M ' + left + ' ' + top + ' L ' + left + ' ' + bot + ' L ' + right + ' ' + bot + ' L ' + right + ' ' + top + ' Z'
         #   red
         this.svg.insert('path', 'rect')
                 .attr('class', dir)
@@ -223,8 +238,8 @@ class BarcodePlot
         #   grey
         this.svg.insert('path', 'rect')
                 .attr('class', dir)
-                .style('stroke', 'adadad')
-                .style('fill', 'adadad')
+                .style('stroke', '#adadad')
+                .style('fill', '#adadad')
                 .attr('d', _rectPathStr(this.xScale(left_val), this.xScale(right_val), b_top, b_bottom))
         #   blue
         this.svg.insert('path', 'rect')
@@ -275,13 +290,7 @@ class BarcodePlot
                     div.transition(25)
                         .style('opacity', 0)
 
-                    # d3.select('.rect'+d.id+'.down')
-                    #     .transition().duration(100)
-                    #     .ease('linear')
-                    #     .attr('y', 125)
-                    #     .attr('height', 75)
-                    #     .attr('width', 1)
-                    #     .style('fill', '#0571b0')
+                    this.highlight(d) # Seems to prevent one side of the barcode plot becoming 'stuck' as highlighted
                 )
 
         # Add worm somehow.
@@ -330,7 +339,9 @@ class BarcodePlot
 
         all_ranks = [domain[0]..domain[1]]
 
-        res = all_ranks.map((all_el) => d.map((d_e) => d_e.rank).includes(all_el) + 0)
+        d_rank = d.map((d_e) -> d_e.rank)
+
+        res = all_ranks.map((all_el) => d_rank.includes(all_el) + 0)
         hav = d.length/all_ranks.length
         #Ensure window is odd in length
         window_width = Math.floor((all_ranks.length * 0.45) / 2) * 2 + 1
@@ -345,8 +356,14 @@ class BarcodePlot
         avg_data = worm_data_obj.map((e) -> {x: e.x, y: avg}) #This is probably totally unecessary for this.
 
         scale_format = {Up : [this.opts.margin_t, this.height * 0.35], Down:[this.height * 0.65, this.height - this.opts.margin_b]}
-        yScale_extent = {Up: [d3.max(worm_data), 0], Down:[0, d3.max(worm_data)]}
         cols = {Up:'#970417', Down:'#04517e'}
+
+        if this.worm_scale == 'auto'
+            tickvals = [0, d3.max(worm_data)/2, d3.max(worm_data)]
+            yScale_extent = {Up: [d3.max(worm_data), 0], Down:[0, d3.max(worm_data)]}
+        else
+            tickvals = [0, 0.5, 1]
+            yScale_extent = {Up: [1, 0], Down:[0, 1]}
 
         #Append axis
         yScale = d3.scale.linear()
@@ -356,7 +373,7 @@ class BarcodePlot
         yaxis = d3.svg.axis()
                 .scale(yScale)
                 .orient('left')
-                .tickValues([0, d3.max(worm_data)/2, d3.max(worm_data)])
+                .tickValues(tickvals)
 
         this.svg.selectAll('.worm.'+dir).remove()
 
@@ -364,6 +381,7 @@ class BarcodePlot
                 .attr('class', 'axis worm '+dir)
                 .attr('transform', 'translate('+this.opts.margin_l+',0)')
                 .call(yaxis)
+                .style('font-size', '10px')
 
         #xScale comes from global scope
         lf = d3.svg.line()
@@ -388,6 +406,52 @@ class BarcodePlot
             .style("stroke-dasharray", "4,4")
             .attr('d', lf(avg_data))
 
+    highlight: (d) ->
+        #select up and down
+        #Modify separately.
+        # return null
+        # Reset all rect's
+        _reset = () =>
+            # console.log(this.svg)
+            # console.log(this.svg.selectAll('.rect'))
+            this.svg.selectAll('rect' + '.Up')
+                .transition().duration(100)
+                .ease('linear')
+                .attr('height', this.bDUp.r_height)
+                .attr('width', 1)
+                .attr('y', this.bDUp.y_top)
+                .style('fill', this.bDUp.colour)
+            this.svg.selectAll('rect' + '.Down')
+                .transition().duration(100)
+                .ease('linear')
+                .attr('height', this.bDDown.r_height)
+                .attr('width', 1)
+                .attr('y', this.bDDown.y_top)
+                .style('fill', this.bDDown.colour)
+
+        # Highlight
+        if d.length > 0
+            d_id = d[0].id
+            _reset()
+            d3.select('.rect' + d_id + '.Up')
+                .transition().duration(20)
+                .ease('linear')
+                .attr('y',this.bDUp.r_highlight_top)
+                .attr('height', this.bDUp.r_highlight_height)
+                .attr('width', 3)
+                .style('fill', 'red')
+
+            d3.select('.rect' + d_id + '.Down')
+                .transition().duration(20)
+                .ease('linear')
+                .attr('y', this.bDDown.r_highlight_top)
+                .attr('height', this.bDDown.r_highlight_height)
+                .attr('width', 3)
+                .style('fill', 'red')
+
+        else
+            _reset()
+
     update_data: (data, barcodeCol, geneListUp, geneListDown) ->
         this.data = data
         this.barcodeCol = barcodeCol
@@ -396,6 +460,31 @@ class BarcodePlot
         # this.curW1 = Object.keys(geneListUp).join()
         # this.curW2 = Object.keys(geneListDown).join()
         this.redraw()
+    _make_menu: (el) ->
+        print_menu = (new Print((() => this._svg_for_print()), @opts.name)).menu()
+        menu = [
+                title: "Worm Plot Scale"
+            ,
+                title: "Scale from 0 to 1"
+                action: () =>
+                    this.worm_scale = 'max'
+                    this.redraw()
+            ,
+                title: "Autoscale (0 to max)"
+                action: () =>
+                    this.worm_scale = 'auto'
+                    this.redraw()
+            ,
+                divider: true
+                ]
+        d3.select(el).on('contextmenu', d3.contextMenu(menu.concat(print_menu)))
+
+    _svg_for_print: () ->
+        if (!this.opts.canvas)
+            # Copy the svg for printing, and copy the styles into it
+            print_svg = d3.select(this.svg.node().cloneNode(true))
+            Print.copy_svg_style_deep(this.svg, print_svg)
+            return print_svg
 
 resize = require('./resize-mixin.coffee')
 
@@ -423,8 +512,8 @@ module.exports =
         filterExt:
             default: null
         filterChanged: null
-        double:
-            default: false
+        orderCol:
+            default: 1
         infoCols:
             default: null
         highlight:
@@ -432,20 +521,20 @@ module.exports =
 
     computed:
         barcodeCol: () ->
-            col = this.plotCols
-            this.clone_data.forEach((e) ->
-                e.sign = Math.sign(e[col[1].idx]) * Math.log2(e["P.Value"])
-            )
-            this.clone_data.sort((a,b) =>
-               a.sign - b.sign
-            )
-            this.clone_data.forEach((e,i,a) =>
-                e.rank = i
-                e.infoCols = this.infoCols
+            if this.orderCol >= 0
+                col = this.plotCols
+                this.clone_data.forEach((e) =>
+                    e.sign = Math.sign(e[col[this.orderCol].idx]) * Math.log2(e["P.Value"])
                 )
+                this.clone_data.sort((a,b) =>
+                    a.sign - b.sign
+                )
+                this.clone_data.forEach((e,i,a) =>
+                    e.rank = i
+                    e.infoCols = this.infoCols
+                    )
             if col?
-                # {name: col[1].name, get: (d) -> d[col[1].idx]}
-                {name: col[1].name, get: (d) -> d['rank']}
+                {name: col[this.orderCol].name, get: (d) -> d['rank']}
 
         needsUpdate: () ->
             this.clone_data
@@ -453,6 +542,7 @@ module.exports =
             # this.colour
             this.filterUp
             this.filterDown
+            this.orderCol
             Date.now()
 
         glUp: () ->
@@ -471,8 +561,8 @@ module.exports =
             genelist.get_members().forEach((val) -> res[val] = val)
             return res
 
-    data: () ->
-        clone_data: []
+        clone_data: () ->
+            JSON.parse(JSON.stringify(this.data))
 
     watch:
         needsUpdate: () ->
@@ -481,8 +571,8 @@ module.exports =
         # filterChanged: () ->
         #     this.reFilter()
 
-        # highlight: (d) ->
-        #     this.me.highlight(d)
+        highlight: (d) ->
+            this.me.highlight(d)
 
     methods:
         update:() ->
@@ -510,7 +600,7 @@ module.exports =
     mounted: () ->
         #Clone the data so we can insert a rank ID and InfoCols to the data
         # object. This is potentially slow.
-        this.clone_data = JSON.parse(JSON.stringify(this.data))
+
         # this.$emit('keepHighlight', this.clone_data.filter((d) => this.filterExt(d)), true)
         this.me = new BarcodePlot(
             data: this.clone_data
@@ -534,6 +624,6 @@ module.exports =
             height: 250
             barcodeCol: this.barcodeCol
         )
-        # this.me.on('mouseover', (d) => this.$emit('mouseover', d))
+        this.me.on('mouseover', (d) => this.$emit('mouseover', d))
         # this.update()
 </script>
