@@ -19,7 +19,3 @@
 * Work on
     * Vue Router
     * VueX
-
-* JQuery
-    * Bootstrap
-    * Save/Delete (config page)

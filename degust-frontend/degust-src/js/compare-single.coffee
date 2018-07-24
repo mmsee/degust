@@ -93,8 +93,8 @@ module.exports =
         showGeneList: false
         cur_gene_list_index: 0
         list_type: 'user'
-        current_full_gene_list: []
-        predef_gene_lists: []
+        predefGeneLists: []
+        userGeneLists: []
         sel_conditions: []             # Array of condition names currently selected to compare
         sel_contrast: null             # Contrast if selected.  Hash with name, and columns
         cur_plot: null
@@ -114,13 +114,13 @@ module.exports =
         show_hoverDesc: false
         show_ModalExperimentDesc: false
         descTooltipLoc: [0,0]
-        use_gene_filter: true
-        geneFilterTop: 0
-        geneFilterBottom: -1
+        use_gene_filter: true # We probably want this to be true by default.
+        stop_hover_heatmap: true
+        geneFilterTop: "None"
+        geneFilterBottom: "None"
         #colour_by_condition: null  # Don't want to track changes to this!
 
     computed:
-        predefGeneLists: () -> await this.predef_gene_lists
         home_link: () -> this.settings?.home_link || '/'
         fdrWarning: () -> this.cur_plot == 'mds' && this.fdrThreshold<1
         fcWarning: () -> this.cur_plot == 'mds' && this.fcThreshold>0
@@ -192,16 +192,17 @@ module.exports =
             {left: (this.descTooltipLoc[0])+'px', top: (this.descTooltipLoc[1] + window.pageYOffset)+'px'}
             # {left: (this.descTooltipLoc[0])+'px', top: undefined}
 
-        user_gene_lists: () ->
-            res = this.settings.userGeneList || []
-            if res.length > 0
-                res = res.map((el) ->
-                    new GeneList(
-                        name = el.title
-                        genes = el.members
-                    )
-                )
-            res
+        user_gene_lists:
+            get: () ->
+                this.userGeneLists
+            set: (val) ->
+                this.userGeneLists = val
+
+        predef_gene_lists:
+            get: () ->
+                this.predefGeneLists
+            set: (val) ->
+                this.predefGeneLists = val
 
         current_gene_lists: () ->
             # check type of list currently used.
@@ -247,8 +248,11 @@ module.exports =
                 this.$nextTick(() -> this.initBackend(false))
             else
                 this.code = this.inputCode
-                this.get_predef()
-                this.current_full_gene_list = this.settings.user_gene_lists
+                # Synchonously waits for both promises. Might be slow if gene lists are big?
+                Promise.all([this.get_predefList(), this.get_userList()]).then((val) =>
+                    this.predefGeneLists = val[0]
+                    this.userGeneLists = val[1]
+                    )
                 log_info("Loading settings for code : #{this.code}")
                 $.ajax({
                     type: "GET",
@@ -388,12 +392,8 @@ module.exports =
             !(isNaN(n) || n<=0)
 
         submitList: (list) ->
-            # this.user_gene_lists = list
-            if this.list_type == 'user'
-                this.settings.userGeneList = list
-            this.current_full_gene_list = list
-            #AJAX request via JQuery
-            this.save()
+            if(await GeneListAPI.add_geneList(list, this.code) == 200)
+                console.log("Saved Successfully!")
         changedCurList: (index) ->
             this.cur_gene_list_index = index
         curListType: (lt) ->
@@ -472,8 +472,10 @@ module.exports =
             ).fail((x) =>
                 log_error("ERROR", x)
             )
-        get_predef: () ->
-            this.predef_gene_lists = await GeneListAPI.get_all_predef_geneLists()
+        get_predefList: () ->
+            GeneListAPI.get_all_predef_geneLists()
+        get_userList: () ->
+            GeneListAPI.get_all_user_geneLists()
         downloadR: () ->
             rcode = ""
             p = this.backend.request_r_code(this.dge_method, this.sel_conditions, this.sel_contrast)
