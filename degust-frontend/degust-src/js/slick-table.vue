@@ -63,7 +63,7 @@ module.exports =
             default: []
             required: true
         columns:
-            default: []
+            default: () -> []
             required: true
         sorter: null
     data: () ->

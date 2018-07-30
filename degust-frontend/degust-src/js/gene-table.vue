@@ -272,44 +272,45 @@ module.exports =
             this.$refs.slickGrid.resort()
     computed:
         gene_table_columns: () ->
-            column_keys = []
-            this.colsToShow.forEach((type) =>
-                column_keys = column_keys.concat(this.geneData.columns_by_type(type))
-            )
-            # column_keys = this.geneData.columns_by_type(['info','fdr','p'])
-            # column_keys = column_keys.concat(this.fcColumns)
-            if this.keepCols.length > 0
-                keepCols_idx = this.keepCols.map((col) -> col.idx)
-                column_keys = column_keys.filter((col) ->
-                    keepCols_idx.indexOf(col.name) >= 0 || keepCols_idx.indexOf(col.idx) >= 0
+            if this.geneData?
+                column_keys = []
+                this.colsToShow.forEach((type) =>
+                    column_keys = column_keys.concat(this.geneData.columns_by_type(type))
                 )
-            me = this
-            columns = column_keys.map((col) ->
-                hsh =
-                    id: col.idx
-                    name: col.name
-                    field: col.idx
-                    sortable: true
-                    formatter: (i,c,val,m,row) ->
-                        return "" if !val?
-                        if col.type in ['fc_calc']
-                            me.fc_div(val, col, row)
-                        else if col.type in ['fdr','p']
-                            if val<0.01 then val.toExponential(2) else val.toFixed(2)
-                        else if col.type == "info"
-                            val.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-                        else
-                            val
-                if col.type in ['fdr','p']
-                    hsh.width = 70
-                    hsh.maxWidth = 70
-                switch col.type
-                    when 'fdr'     then hsh.toolTip = "False Discovery Rate"
-                    when 'p'       then hsh.toolTip = "Raw P value"
-                    when 'fc_calc' then hsh.toolTip = "Log<sub>2</sub> Fold-change"
-                hsh
-            )
-            columns
+                # column_keys = this.geneData.columns_by_type(['info','fdr','p'])
+                # column_keys = column_keys.concat(this.fcColumns)
+                if this.keepCols.length > 0
+                    keepCols_idx = this.keepCols.map((col) -> col.idx)
+                    column_keys = column_keys.filter((col) ->
+                        keepCols_idx.indexOf(col.name) >= 0 || keepCols_idx.indexOf(col.idx) >= 0
+                    )
+                me = this
+                columns = column_keys.map((col) ->
+                    hsh =
+                        id: col.idx
+                        name: col.name
+                        field: col.idx
+                        sortable: true
+                        formatter: (i,c,val,m,row) ->
+                            return "" if !val?
+                            if col.type in ['fc_calc']
+                                me.fc_div(val, col, row)
+                            else if col.type in ['fdr','p']
+                                if val<0.01 then val.toExponential(2) else val.toFixed(2)
+                            else if col.type == "info"
+                                val.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                            else
+                                val
+                    if col.type in ['fdr','p']
+                        hsh.width = 70
+                        hsh.maxWidth = 70
+                    switch col.type
+                        when 'fdr'     then hsh.toolTip = "False Discovery Rate"
+                        when 'p'       then hsh.toolTip = "Raw P value"
+                        when 'fc_calc' then hsh.toolTip = "Log<sub>2</sub> Fold-change"
+                    hsh
+                )
+                columns
         tableRows: () ->
             if this.searchStr==''
                 this.rows
@@ -326,7 +327,10 @@ module.exports =
                 )
 
         defaultCols: () ->
-            this.geneData.columns_by_type(['info','fdr','p']).concat(this.fcColumns)
+            if this.geneData?
+                this.geneData.columns_by_type(['info','fdr','p']).concat(this.fcColumns)
+            else
+                []
     methods:
         resize: () ->
             this.$emit('resize')

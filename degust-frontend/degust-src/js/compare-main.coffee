@@ -165,7 +165,7 @@ module.exports =
             # Now the others
             this.datasets.forEach((d,idx2) ->
                 return if idx==idx2 || !d.component?
-                d.gene_colour = (gene) ->
+                d.gene_colsToShowour = (gene) ->
                     if !empty && brushed_keys.indexOf(gene[d.key_col.idx])>=0
                         colour_highlight
                     else
