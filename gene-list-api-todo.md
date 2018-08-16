@@ -38,11 +38,16 @@ User defined geneLists won't be required to add: Organism, Description
 API Specifics:
 * GET:
     * Get all gene lists
+<<<<<<< HEAD
         * `/degust/:id/gene-lists/`
+=======
+        * `/degust/:id/gene_lists/`
+>>>>>>> 919f9b1d30e94412ebddf27870a230488a539de6
         * If no gene list exists return `[]`
         * Can assume that each dataset has list of gene lists initialised to []
         * Returns JSON associated with each of the gene lists
     * Get a specific gene list
+<<<<<<< HEAD
         * `/degust/:id/gene-lists/{:gene-list-id}`
         * If missing, push back to user with an error like "Gene list cannot be loaded because we cant find one with that name"
 
@@ -51,25 +56,50 @@ API Specifics:
         * This does mean that Degust does need to know what kind of organism it is analysing.
     * Get specific predefined gene lists for a given organism
         * `/degust/{:organism}/gene-lists/{:gene-list-id}`
+=======
+        * `/degust/:id/gene_lists/{:gene-list-id}`
+        * If missing, push back to user with an error like "Gene list cannot be loaded because we cant find one with that name"
+
+    * Get predefined gene lists for a given organism
+        * `/degust/{:organism}/gene_lists/`
+        * This does mean that Degust does need to know what kind of organism it is analysing.
+    * Get specific predefined gene lists for a given organism
+        * `/degust/{:organism}/gene_lists/{:gene-list-id}`
+>>>>>>> 919f9b1d30e94412ebddf27870a230488a539de6
         * This does mean that Degust does need to know what kind of organism it is analysing.
 
 * POST:
     * Make a new gene list
+<<<<<<< HEAD
         * `/degust/:id/gene-lists/{:gene-list-id}`
+=======
+        * `/degust/:id/gene_lists/{:gene-list-id}`
+>>>>>>> 919f9b1d30e94412ebddf27870a230488a539de6
         * If gene-list-id collision, push back to user with error "Gene list cannot be added, because one with that name already exists"
         * Assume list name is url encoded. (Remember to check for xss on render too)
 
 <!-- For future
     * Update an existing gene list's genes
+<<<<<<< HEAD
         * `/degust/:id/gene-lists/{:gene-list-id}/genes`
         * Post directly to a given gene list to replace the existing array of genes
     * Update an existing gene list's properties
         * `/degust/:id/gene-lists/{:gene-list-id}/properties`
+=======
+        * `/degust/:id/gene_lists/{:gene-list-id}/genes`
+        * Post directly to a given gene list to replace the existing array of genes
+    * Update an existing gene list's properties
+        * `/degust/:id/gene_lists/{:gene-list-id}/properties`
+>>>>>>> 919f9b1d30e94412ebddf27870a230488a539de6
         * Post directly to a given gene list to replace the existing properties
 -->
 * DEL:
     * Delete/Remove a gene list
+<<<<<<< HEAD
     * `/degust/:id/gene-lists/{:gene-list-id}`
+=======
+    * `/degust/:id/gene_lists/{:gene-list-id}`
+>>>>>>> 919f9b1d30e94412ebddf27870a230488a539de6
     * If missing, push back to user with error "Gene list cannot be deleted because we cant find one with that name"
 
 How does the server perform merge/match operations?
