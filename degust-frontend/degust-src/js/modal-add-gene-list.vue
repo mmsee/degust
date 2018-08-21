@@ -54,6 +54,10 @@
     input::placeholder {
         font-size: 80%;
     }
+
+    .lenWarning{
+        font-size: 8pt;
+    }
 </style>
 
 <template>
@@ -88,6 +92,7 @@
                         <tr v-tooltip='tip("Description of gene list (Optional)")'>
                             <td class='label-column'>Description</td>
                             <td class='input-column'><textarea class="form-control" type="text" v-model='listDescription' placeholder="Gene List Description" id="geneListDescription"/></td>
+                            <div class='lenWarning' style='float:right;' v-if='listDescription.length > 500'>Description too long ({{listDescription.length}}). 500 chacter limit</div>
                         </tr>
                         <tr v-tooltip='tip("Genes are separated by spaces, on lines or commas")'>
                             <td class='label-column'>Gene List</td>
@@ -127,7 +132,7 @@ module.exports =
     computed:
         # Returns true if valid. This is passed to a "disabled" so ! the value there
         validTotalInput: () ->
-            if (this.listName != "" && this.idType != "" && this.organismName != "" && this.inputList != "")
+            if (this.listName != "" && this.idType != "" && this.organismName != "" && this.inputList != "" && this.listDescription.length <= 500)
                 return true
             else
                 false
@@ -137,9 +142,15 @@ module.exports =
         addToList: () ->
             # Make the genelist and then emit it to the parent.
             if this.allGeneTitles.indexOf(this.listName) == -1
+                genes = this.inputList.split(/,|\n|\t/).map((el) -> el.trim()).filter((el) -> el.length > 0)
+                data = {columns: {idx:"id"}, rows: genes.map((e) -> {id:e})}
+                desc = this.listDescription
                 gl = new GeneList(
                     name = this.listName
-                    genes = this.inputList.split(/,|\n|\t/).map((el) -> el.trim()).filter((el) -> el.length > 0)
+                    data = data
+                    id_type = this.idType
+                    collectionType = this.collectionType
+                    desc = this.listDescription
                 )
                 this.$emit('geneset', gl)
                 this.close()

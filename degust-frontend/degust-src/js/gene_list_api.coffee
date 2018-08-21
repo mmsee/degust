@@ -1,69 +1,80 @@
 { GeneList } = require('./gene_list.coffee')
 
 # Idea here is that total is simply replaced with an AJAX through the API
+class geneListAPI
+    constructor: (code, token) ->
+        this.code = code
+        this.token = token
 
-get_all_geneLists = (code) ->
-    new Promise((resolve) =>
-        a = require('./def.json')
-        res = a.map((e) => new GeneList(e.title[0], e.members))
-        resolve(res)
-    )
-
-# name of genelist, type (user/predefined) and secure_id
-get_geneList = (name, type, code) ->
-    res = total.filter((e) => e.title == name)
-    console.log(res)
-
-add_geneList = (total, code) ->
-    return new Promise((resolve) =>
-        resolve(200)
-    )
-
-find_geneList = (total, st) ->
-    if(st != "")
-        term = st.toLowerCase()
-        res = total.filter((gl) =>
-            gl.get_title().toLowerCase().includes(term) ||
-            gl.get_members().map((e) => e.toLowerCase()).filter( (gene) =>
-                gene.includes(term)
-            ).length > 0
+    # ID of genelist
+    get_geneList: (list_id) ->
+        code = this.code
+        $.ajax(
+            type: "GET"
+            url: window.location.origin + '/degust/' + code + '/gene_lists/' + list_id
+            dataType: "json"
+        ).done((x) =>
+            return x
         )
-        return res
-    else
-        total
 
-modify_geneList = (newList, code) ->
-    console.log("Updated with " + newlist)
+    add_geneList: (list) ->
+        token = this.token
+        code = this.code
+        $.ajax(
+            type: "POST"
+            beforeSend: (xhr) =>
+                xhr.setRequestHeader('X-CSRF-Token', token)
+            url: window.location.origin + '/degust/' + code + '/' + 'gene_lists'
+            data:
+                title: list.get_title()
+                description: list.get_description()
+                id_type: list.get_id_type()
+                collection_type: list.get_collection_type()
+                rows: JSON.stringify(list.get_rows())
+                columns: JSON.stringify(list.get_columns())
+        ).done((x) =>
+            return 200
+        )
 
-remove_geneList = (list_name, code) ->
-    return new Promise((resolve) =>
-        resolve(200)
-    )
+    find_geneList: (total, st) ->
+        if(st != "")
+            term = st.toLowerCase()
+            res = total.filter((gl) =>
+                gl.title().toLowerCase().includes(term) ||
+                gl.data.rows.map((e) => e.toLowerCase()).filter( (gene) =>
+                    gene.includes(term)
+                ).length > 0
+            )
+            return res
+        else
+            total
 
-#This is a fake dataset to use before the Ruby API is developed.
-#Using this instead of AJAX GET/SET
-get_all_predef_geneLists = () =>
-    new Promise((resolve) =>
-        a = JSON.parse(require('./predef.json')[0])
-        res = a.map((e) => new GeneList(e.title[0], e.members))
-        resolve(res)
-    )
+    remove_geneList: (list_id) ->
+        code = this.code
+        token = this.token
+        $.ajax(
+            type:"DELETE"
+            beforeSend: (xhr) -> xhr.setRequestHeader('X-CSRF-Token', token)
+            url: window.location.origin + '/degust/' + code + '/' + 'gene_lists/' + list_id
+        ).complete((e) =>
+            if e.status == 200
+                console.log("Deleted: " + list_id)
+        )
 
-get_all_user_geneLists = () =>
-    new Promise((resolve) =>
-        a = require('./user.json')
-        # a = JSON.parse(require('./user.json')[0])
-        res = a.map((e) => new GeneList(e.title, e.members))
-        resolve(res)
-    )
+    #No longer need a concept of 'predefined genelists'
+    get_all_user_geneLists: () =>
+        code = this.code
+        $.ajax(
+            type: "GET"
+            url: window.location.origin + '/degust/' + code + '/' + 'gene_lists'
+            dataType: "json"
+        ).done((x) =>
+            res = x.map((e) =>
+                new GeneList(e.title, {rows:e.rows, columns:e.columns}, e.id_type, e.collection_type, e.description)
+            )
+            return(res)
+        )
 
 module.exports =
-    get_geneList: get_geneList
-    add_geneList: add_geneList
-    find_geneList: find_geneList
-    modify_geneList: modify_geneList
-    remove_geneList: remove_geneList
-    get_all_geneLists: get_all_geneLists
-    get_all_predef_geneLists: get_all_predef_geneLists
-    get_all_user_geneLists: get_all_user_geneLists
+    GeneListAPI: geneListAPI
 

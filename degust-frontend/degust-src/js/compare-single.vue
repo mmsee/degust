@@ -138,10 +138,9 @@
               </div>
 
               <div v-tooltip="tip('Filter page to genes in this list')">
-                <label>Gene list</label>
-                  <a @click='showGeneList=true'>{{ (current_gene_lists.length == 0) ? "Create Filter" : current_gene_lists.length + " Lists" }}</a>
-                  {{ (current_gene_lists.length > 0) ? current_gene_lists[cur_gene_list_index].get_title()+ ' has: ' + current_gene_lists[cur_gene_list_index].get_members().length + " ID's": "" }}
-                  <a style='float:right;' v-if='current_gene_lists.length > 0' @click='use_gene_filter=!use_gene_filter'>Toggle Filter {{use_gene_filter? ' off' : ' on'}}</a>
+                <label>Gene lists</label>
+                <a @click='showGeneList=true'>{{ (current_gene_list.title == undefined) ? "Select/Create Filter" : "Using: " + current_gene_list.title }}</a>
+                <!-- <a style='float:right;' v-if='(current_gene_list.id == undefined)' @click='use_gene_filter=!use_gene_filter'>Toggle Filter {{use_gene_filter? ' off' : ' on'}}</a> -->
               </div>
 
               <div v-tooltip="tip('Show FC from selected condition')">
@@ -214,7 +213,7 @@
                   </select>
                 </div>
 
-                <div v-tooltip="tip('MDS in 2d or 3d')">
+                <div v-tooltip="tip ('MDS in 2d or 3d')">
                   <label>MDS plot</label>
                   <select v-model='mds_2d3d'>
                     <option value='2d'>2d</option>
@@ -234,14 +233,14 @@
                   <label>Genes Up</label>
                     <select v-model='geneFilterTop'>
                       <option :value='-1'>None</option>
-                      <option v-for='(geneList, i) in user_gene_lists' :value='i'>{{geneList.title}}</option>
+                      <option v-for='(geneList, i) in user_gene_lists_partial' :value='i'>{{geneList.title}}</option>
                     </select>
                 </div>
                 <div v-tooltip="tip('Select a gene-set to test for enrichment')">
                   <label>Genes Down</label>
                     <select v-model='geneFilterBottom'>
                       <option :value='-1'>None</option>
-                      <option v-for='(geneList, i) in user_gene_lists' :value='i'>{{geneList.title}}</option>
+                      <option v-for='(geneList, i) in user_gene_lists_partial' :value='i'>{{geneList.title}}</option>
                     </select>
                 </div>
               </div><!-- div.barcode-opts-->
@@ -361,7 +360,7 @@
                         @dimension='v => mdsDimension = v'
                         >
                 </mds-plot>
-                <div v-if='cur_plot=="barcode" && (user_gene_lists.length == 0 || (geneFilterTop == -1 && geneFilterBottom == -1))'>
+                <div v-if='cur_plot=="barcode" && (user_gene_lists_partial.length == 0 || (geneFilterTop == -1 && geneFilterBottom == -1))'>
                   <h4>Please enter/select a Gene Set</h4>
                 </div>
                 <barcode-plot v-else-if='cur_plot=="barcode"'
@@ -369,8 +368,8 @@
                   :data='gene_data_rows'
                   :colour='plot_colouring'
                   :plot-cols='fc_calc_columns'
-                  :filter-up='user_gene_lists[geneFilterTop]'
-                  :filter-down='user_gene_lists[geneFilterBottom]'
+                  :filter-up='glUp_full'
+                  :filter-down='glDown_full'
                   :filter-ext='expr_filter'
                   :filter-changed='filter_changed'
                   :info-cols='info_columns'
@@ -381,7 +380,6 @@
                   >
                   <!-- :gene-set='user_gene_list' -->
                 </barcode-plot>
-
               </div>
             </div><!-- expression -->
 
@@ -435,14 +433,11 @@
     <!-- Gene List box Modal -->
     <filterGenes
               :show='showGeneList'
-              :geneLists='user_gene_lists'
-              :predefGeneLists='predef_gene_lists'
-              :curList='cur_gene_list_index'
               :usingList='use_gene_filter'
+              :geneListAPI='geneListAPI'
               @close='showGeneList=false'
-              @changedCurList='(val) => cur_gene_list_index = val'
-              @changedListType='(val) => list_type = val'
-              @submitList='submitList'
+              @updateGeneList='(val) => user_gene_lists_partial = val'
+              @changedCurList='(val) => current_gene_list = val'
               >
     </filterGenes>
 

@@ -16,12 +16,12 @@ Geneset/Table Structure
 * desc: `str` `"Group of genes associated with cancer outcome"`
 * id_type: `str` `"EnsemblGenome"`
 * collection_type - `"KEGG/Reactome/Allergome"` (Maybe `[]` for more than one type?)
-* data - (Might not always be genes, sometimes proteins)
+* rows: (String of JSON encoded object) (Might not always be genes, sometimes proteins)
 	* Each ID is - `[]`
         * name: `""`
         * col1:
         * col2:`...`
-* columns:
+* columns: (String of JSON encoded object)
     * id: `col1`
     * name: `"FDR"`
     * type (of contents): `str`, `int`, `float`

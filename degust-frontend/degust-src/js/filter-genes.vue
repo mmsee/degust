@@ -84,26 +84,14 @@
                                 <li :class='{active: cur_tab_left=="user"}'>
                                     <a @click='cur_tab_left="user";'>Your Gene Lists</a>
                                 </li>
-                                <li :class='{active: cur_tab_left=="predef"}'>
-                                    <a @click='cur_tab_left="predef";cur_tab_right="display"'>Predefined</a>
-                                </li>
                             </ul>
                             <br/>
                             <div id='glSearchBox'><input type='text' placeholder="Search..." v-model="searchTerm" style='padding:2px;'></div>
                             <div v-if='cur_tab_left=="user"' class='tableScroll'>
                                 <table class='userListTable'>
                                     <tr :key='index' v-for='(list, index) in searchedLists' v-bind:class='{"selected": (index == curList)}'>
-                                        <td @click='selectList(index, "user"), user_sel = index'>{{ list.get_title() }}</td>
-                                        <td @click='selectList(index, "user"), user_sel = index'>{{ list.get_members().length }} ID's</td>
+                                        <td @click='selectList(index, "user"), user_sel = index'>{{ list.title }}</td>
                                         <td class='removeList'><button type="button" class="btn btn-danger-outline" @click='removeIdx(index)'><span class='glyphicon glyphicon-minus'></span></button></td>
-                                    </tr>
-                                </table>
-                            </div>
-                            <div v-if='cur_tab_left=="predef"' class='tableScroll'>
-                                <table class='userListTable'>
-                                    <tr :key='list.title' v-for='(list, index) in searchedLists' v-bind:class='{"selected": (index == curList)}'>
-                                        <td @click='selectList(index, "predef"), predef_sel = index'>{{ list.get_title() }}</td>
-                                        <td @click='selectList(index, "predef"), predef_sel = index'>{{ list.get_members().length }} ID's</td>
                                     </tr>
                                 </table>
                             </div>
@@ -115,12 +103,10 @@
                         <div style="height:56%;overflow:auto;">
                             <div class='displaydiv' v-if='geneLists.length > 0 && curList != -1'>
                                 <h6>Contents of selected gene list</h6>
-                                <div :key="index" v-for="(names, index) in cur_tab_left ==='user'? geneLists[curList].get_members() : predefGeneLists[curList].get_members()">
-                                    <div><span>{{ names }}</span></div>
-                                </div>
+                                <div :key='idx' v-for='(gene, idx) in curListContents'>{{ gene.id }}</div>
                             </div>
                             <div v-else>
-                                <h5>No list Selected!</h5>
+                                <h5>No list Selected</h5>
                             </div>
                         </div>
                     </div>
@@ -136,7 +122,7 @@
             style="z-index: 2"
             :showAddList='showAddGenes'
             :allGeneTitles='geneLists.map(e => e.title)'
-            @geneset='appendToList'
+            @geneset='(list) => appendToList(list)'
             @close='showAddGenes=false'>
         </addGeneListModal>
 
@@ -152,55 +138,68 @@ addGeneListModal = require('./modal-add-gene-list.vue').default
 
 module.exports =
     name: 'filterGenes'
+    props:
+        show: false
+        geneListAPI:
+            default: undefined
+            required: true
     data: () ->
         cur_tab_left: "user"
         cur_tab_right: "add"
         curList: -1 #Do we want a second value so we have one for each list? (predefined and user)
         usingList: true
-        listType: 'user' #There are two values represeinting the current list?
+        listType: 'user' #There are two values representing the current list?
         searchTerm: ""
         showAddGenes: false
         searchedLists: []
-        predef_sel: -1
         user_sel: -1
+        geneLists: []
+        curListContents: []
     components:
         modal: Modal
         addGeneListModal: addGeneListModal
-    props:
-        show: false
-        geneLists:
-            default: []
-        predefGeneLists:
-            default: []
     watch:
         searchTerm: (val) ->
             this.set_search_lists(val)
         cur_tab_left: () ->
-            if(this.cur_tab_left == 'user')
-                this.curList = this.user_sel
-            else
-                this.curList = this.predef_sel
+            this.curList = this.user_sel
             this.set_search_lists(this.searchTerm)
-        geneLists: () ->
+        geneLists: (x) ->
             this.set_search_lists(this.searchTerm)
+        geneListAPI: () ->
+            this.geneListAPI.get_all_user_geneLists()
+                .then((result) =>
+                    this.geneLists = result
+                    this.$emit('updateGeneList', this.geneLists)
+                    )
+        user_sel: (sel) ->
+            this.curListContents = "Getting Genes..."
+            id = this.geneLists[sel].id
+            this.geneListAPI.get_geneList(id).then((gl) =>
+                this.curListContents = JSON.parse(gl.rows)
+                )
+
     computed:
         curTitle: () ->
             if(this.curList == -1)
                 return "None"
             if(this.listType == 'user')
-                this.geneLists[this.user_sel].get_title()
-            else if(this.listType == 'predef')
-                this.predefGeneLists[this.predef_sel].get_title()
+                # this.geneLists[this.user_sel].get_title()
+                this.geneLists[this.user_sel].title
             #We now have it behaving properly, but cannot instantiate it correctly. It does not appear correctly.
 
     methods:
         set_search_lists: (st) ->
-            gl = []
-            if(this.cur_tab_left == 'user')
-                gl = this.geneLists
-            else if(this.cur_tab_left == 'predef')
-                gl = this.predefGeneLists
-            this.searchedLists = GeneListAPI.find_geneList(gl, st)
+            if st == ""
+                this.searchedLists = this.geneLists
+                return
+            gl = this.geneLists
+            this.searchedLists = gl.filter((e,i,a) =>
+                if !e.title? || !e.description? || !e.id_type?
+                    return false
+                res = e.title.indexOf(st) > -1 || e.description.indexOf(st) > -1 || e.id_type.indexOf(st) > -1
+                return res
+            )
 
         clearList: () ->
             this.inputList = ""
@@ -218,32 +217,43 @@ module.exports =
             else
                 return false
         saveUserGeneList: () ->
-            #These three are emitted so that the compare-single knows about which gene list is selected.
-            this.$emit('submitList', this.geneLists)
-            this.$emit('changedCurList', this.curList)
-            this.$emit('changedListType', this.listType)
+            # this.$emit('submitList', this.geneLists)
+            this.$emit('updateGeneList', this.geneLists)
+            if this.curList != -1
+                this.geneListAPI.get_geneList(this.geneLists[this.curList].id).then((x) =>
+                    res = new GeneList(x.title, {rows: JSON.parse(x.rows), columns: JSON.parse(x.columns)}, x.id_type, x.collection_type, x.description)
+                    this.$emit('changedCurList', res)
+                )
+            else
+                this.$emit('changedCurList', {})
 
         # This method should probably append to list by emitting to submit?
-        appendToList: (value) ->
-            # Pass to parent?
-            # this.$emit('addGeneList')
-            # On 200, emit the new genelist? Or should the gene list be emitted to the parent and then it be updated?
-            if (GeneListAPI.add_geneList(this.geneLists, value) == 200)
-                console.log(value)
+        appendToList: (newList) ->
+            # this.$emit('addGeneList', newList)
+            this.geneListAPI.add_geneList(newList).then((x) =>
+                this.geneListAPI.get_all_user_geneLists().then((result) =>
+                    this.geneLists = result
+                    this.$emit('updateGeneList', this.geneLists)
+                    )
+            )
+
         selectList: (index, listType) ->
             this.cur_tab_right = 'display'
             this.listType = listType
-            this.curList = index
+            if this.curList != index
+                this.curList = index
+            else
+                this.curList = -1
+
         removeIdx: (index) ->
-            # if (GeneListAPI.remove_geneList(this.geneLists[this.curList].get_title(), this.code) == 200)
             if(index == this.curList)
                 this.curList = -1
                 this.user_sel = -1
             else if(index < this.curList)
                 this.curList -= 1
+            this.geneListAPI.remove_geneList(this.geneLists[index].id)
             this.geneLists.splice(index, 1)
-            # this.$emit(removedlist, index)
-            # or, simply call GeneListAPI.
+
         close: () ->
             this.$emit('close')
         closeButton: () ->
@@ -251,5 +261,5 @@ module.exports =
             this.close()
 
     mounted: () ->
-        # this.$emit('listType', "user")
+        this.geneLists = []
 </script>

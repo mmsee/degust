@@ -27,7 +27,7 @@ barcodePlot = require('./barcodeplot.vue').default
 { Normalize } = require('./normalize.coffee')
 { GeneData } = require('./gene_data.coffee')
 { GeneList } = require('./gene_list.coffee')
-GeneListAPI = require('./gene_list_api.coffee')
+{ GeneListAPI } = require('./gene_list_api.coffee')
 
 module.exports =
     name: 'compare-single'
@@ -91,10 +91,13 @@ module.exports =
         dge_methods: []
         qc_plots: []
         showGeneList: false
-        cur_gene_list_index: 0
-        list_type: 'user'
-        predefGeneLists: []
-        userGeneLists: []
+        user_gene_lists_partial: []
+        current_gene_list: {}
+        current_gene_list_rows: {}
+        current_gene_list_cols: {}
+        current_gene_list_genes: []
+        glUp_full: undefined
+        glDown_full: undefined
         sel_conditions: []             # Array of condition names currently selected to compare
         sel_contrast: null             # Contrast if selected.  Hash with name, and columns
         cur_plot: null
@@ -118,7 +121,8 @@ module.exports =
         stop_hover_heatmap: true
         geneFilterTop: -1
         geneFilterBottom: -1
-        barcodeOrderCol: 1 #Defaulting to zero means we have selected the column everything
+        geneListAPI: {}
+        barcodeOrderCol: 1 #Defaulting to zero means we have selected the column everything is relative to.
         #colour_by_condition: null  # Don't want to track changes to this!
 
     computed:
@@ -162,6 +166,7 @@ module.exports =
             this.fcThreshold
             this.user_gene_list_cache
             this.use_gene_filter
+            this.current_gene_list.title
             Date.now()
         need_renormalization: () ->
             this.normalization
@@ -173,13 +178,6 @@ module.exports =
             else
                 heatmap_dims = this.normalizationColumns
             heatmap_dims
-        user_gene_list_cache: () ->
-            if this.list_type == 'user'
-                if this.user_gene_lists.length == 0
-                    return
-                res = {}
-                this.user_gene_lists[this.cur_gene_list_index].get_members().forEach((val) -> res[val] = val)
-                res
 
         #Added to show/hide counts/intensity
         is_pre_analysed: () ->
@@ -193,24 +191,12 @@ module.exports =
             {left: (this.descTooltipLoc[0])+'px', top: (this.descTooltipLoc[1] + window.pageYOffset)+'px'}
             # {left: (this.descTooltipLoc[0])+'px', top: undefined}
 
+        #This does NOT have full genelists. Only has enough to make it searchable.
         user_gene_lists:
             get: () ->
                 this.userGeneLists
             set: (val) ->
                 this.userGeneLists = val
-
-        predef_gene_lists:
-            get: () ->
-                this.predefGeneLists
-            set: (val) ->
-                this.predefGeneLists = val
-
-        current_gene_lists: () ->
-            # check type of list currently used.
-            if this.list_type == "user"
-                return this.user_gene_lists
-            else
-                return this.predef_gene_lists
 
     watch:
         '$route': (n,o) ->
@@ -235,8 +221,36 @@ module.exports =
             this.renormalize()
         shown: () ->
             this.$emit('resize')
-        curListType: () ->
-            this.current_gene_lists()
+        current_gene_list: (val) ->
+            if !val.data?
+                current_gene_list_rows: {}
+                current_gene_list_cols: {}
+                current_gene_list_genes: []
+                this.set_genes_selected(this.gene_data.get_data())
+            else
+                this.current_gene_list_cols = val.get_rows()
+                this.current_gene_list_rows = val.get_columns()
+                this.set_genes_selected(this.expr_data)
+                #No gene list should ever have a length of zero, but still check for it in case
+                if this.current_gene_list_rows.length == 0
+                    return
+                else
+                    this.current_gene_list_genes = val.get_members()
+        #Watch for changes to genefiltertop/bottom and then update glUp/Down asynchronously
+        geneFilterTop: (val) ->
+            if val != -1
+                this.geneListAPI.get_geneList(this.user_gene_lists_partial[val].id).then((x) =>
+                    this.glUp_full = new GeneList(x.title, {rows: JSON.parse(x.rows), columns: JSON.parse(x.columns)}, x.id_type, x.collection_type, x.description)
+                )
+            else
+                this.glUp_full = undefined
+        geneFilterBottom: (val) ->
+            if val != -1
+                this.geneListAPI.get_geneList(this.user_gene_lists_partial[val].id).then((x) =>
+                    this.glDown_full = new GeneList(x.title, {rows: JSON.parse(x.rows), columns: JSON.parse(x.columns)}, x.id_type, x.collection_type, x.description)
+                )
+            else
+                this.glDown_full = undefined
 
     methods:
         init: () ->
@@ -249,11 +263,6 @@ module.exports =
                 this.$nextTick(() -> this.initBackend(false))
             else
                 this.code = this.inputCode
-                # Synchonously waits for both promises. Might be slow if gene lists are big?
-                Promise.all([this.get_predefList(), this.get_userList()]).then((val) =>
-                    this.predefGeneLists = val[0]
-                    this.userGeneLists = val[1]
-                    )
                 log_info("Loading settings for code : #{this.code}")
                 $.ajax({
                     type: "GET",
@@ -289,6 +298,7 @@ module.exports =
             if !use_backend
                 this.backend = new backends.BackendNone(this.settings, this.ev_backend)
             else
+                this.geneListAPI = new GeneListAPI(this.code, this.full_settings.tok)
                 switch this.settings.input_type
                     when 'counts'
                         this.backend = new backends.BackendRNACounts(this.code, this.settings, this.ev_backend)
@@ -392,14 +402,6 @@ module.exports =
             n = Number(v)
             !(isNaN(n) || n<=0)
 
-        submitList: (list) ->
-            if(await GeneListAPI.add_geneList(list, this.code) == 200)
-                console.log("Saved Successfully!")
-        changedCurList: (index) ->
-            this.cur_gene_list_index = index
-        curListType: (lt) ->
-            this.list_type = lt
-
         # Check if the passed row passes filters for : FDR, FC, Kegg, Filter List
         expr_filter: (row) ->
             #console.log "filter"
@@ -411,14 +413,16 @@ module.exports =
                     return false
 
             # Filter by genes in user_gene_list
-            if this.current_gene_lists.length > 0 && this.use_gene_filter
+            if this.current_gene_list.title? #&& this.use_gene_filter
                 info_cols = this.gene_data.columns_by_type('info').map((c) -> row[c.idx])
                 matching = info_cols.filter((col) =>
-                    this.current_gene_lists[this.cur_gene_list_index].get_members().map((e) -> e.toLowerCase()).includes(col.toLowerCase())
+                    this.current_gene_list_genes.map((e,i,a) ->
+                        e.toLowerCase()).includes(col.toLowerCase()
+                    )
+                    this.current_gene_list.get_members().map((e) -> e.toLowerCase()).includes(col.toLowerCase())
                 )
                 if matching.length == 0
                     return false
-
             # Filter by FDR
             pval_col = this.fdr_column
             return false if row[pval_col.idx] > this.fdrThreshold
@@ -473,10 +477,7 @@ module.exports =
             ).fail((x) =>
                 log_error("ERROR", x)
             )
-        get_predefList: () ->
-            GeneListAPI.get_all_predef_geneLists()
-        get_userList: () ->
-            GeneListAPI.get_all_user_geneLists()
+
         downloadR: () ->
             rcode = ""
             p = this.backend.request_r_code(this.dge_method, this.sel_conditions, this.sel_contrast)
