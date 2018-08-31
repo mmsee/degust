@@ -106,7 +106,7 @@
               <div class="form-group">
                 <label class="control-label col-sm-3">Info columns</label>
                 <div class="controls col-sm-6"  v-tooltip="tip('Information columns to display in the gene table')">
-                  <multiselect v-model="settings.info_columns" :options="columns_info" :multiple="true" :close-on-select="false" :show-labels="false" :searchable="true" placeholder="Add column"/>
+                  <multiselect v-model="settings.info_columns" :options="column_names" :multiple="true" :close-on-select="false" :show-labels="false" :searchable="true" placeholder="Add column"/>
                 </div>
               </div>
 
@@ -178,7 +178,7 @@
                             </div>
                             <div class="col-sm-9">
                               <div class="col-sm-8">
-                                <multiselect v-model="rep.cols" :options="columns_info"
+                                <multiselect v-model="rep.cols" :options="column_names"
                                              @input='selected_reps(rep)'
                                              :multiple="true" :close-on-select="false"
                                              :show-labels="false" :searchable="false"
@@ -254,21 +254,21 @@
                 <div class="form-group">
                   <label class="control-label col-sm-3">FDR column</label>
                   <div class="controls col-sm-3">
-                    <multiselect v-model="settings.fdr_column" :options="columns_info" :allow-empty="true" :searchable="false" :close-on-select="true" :show-labels="false" placeholder="--- Required ---" v-tooltip="tip('Column containing the False-Discovery-Rate.  Sometimes called adj.P.Val')"></multiselect>
+                    <multiselect v-model="settings.fdr_column" :options="column_names" :allow-empty="true" :searchable="false" :close-on-select="true" :show-labels="false" placeholder="--- Required ---" v-tooltip="tip('Column containing the False-Discovery-Rate.  Sometimes called adj.P.Val')"></multiselect>
                     <span class='text-error'></span>
                   </div>
                 </div>
                 <div class="form-group">
                   <label class="control-label col-sm-3">Average expression column</label>
                   <div class="controls col-sm-3">
-                    <multiselect v-model="settings.avg_column" :options="columns_info" :allow-empty="true" :searchable="false" :close-on-select="true" :show-labels="false" placeholder="--- Required ---" v-tooltip="tip('Column containing the average (log) expression information.  Often called Amean or AveExpr')"></multiselect>
+                    <multiselect v-model="settings.avg_column" :options="column_names" :allow-empty="true" :searchable="false" :close-on-select="true" :show-labels="false" placeholder="--- Required ---" v-tooltip="tip('Column containing the average (log) expression information.  Often called Amean or AveExpr')"></multiselect>
                     <span class='text-error'></span>
                   </div>
                 </div>
                 <div class="form-group">
                   <label class="control-label col-sm-3">Fold-change columns</label>
                   <div class="controls col-sm-3">
-                    <multiselect v-model="settings.fc_columns" :options="columns_info" :multiple="true" :close-on-select="false" :show-labels="false" :searchable="false" placeholder="Pick some" v-tooltip="tip('Columns containing the log fold-change data')"/>
+                    <multiselect v-model="settings.fc_columns" :options="column_names" :multiple="true" :close-on-select="false" :show-labels="false" :searchable="false" placeholder="Pick some" v-tooltip="tip('Columns containing the log fold-change data')"/>
                   </div>
                 </div>
               </div>
@@ -298,7 +298,7 @@
                       <div class="form-group">
                         <label class="control-label col-sm-3">Gene link column</label>
                         <div class="controls col-sm-3">
-                          <multiselect v-model="settings.link_column" :options="columns_info" :allow-empty="true" :searchable="false" :close-on-select="true" :show-labels="false" placeholder="--- Optional ---"></multiselect>
+                          <multiselect v-model="settings.link_column" :options="column_names" :allow-empty="true" :searchable="false" :close-on-select="true" :show-labels="false" placeholder="--- Optional ---"></multiselect>
                         </div>
                       </div>
                       <div class="form-group">
@@ -346,7 +346,7 @@
             </div> <!-- options -->
           </div> <!-- row -->
 
-          <div class="row">Number of columns = {{columns_info.length}}</div>
+          <div class="row">Number of columns = {{column_names.length}}</div>
           <slick-table id='grid'
                        :rows='asRows'
                        :columns='table_columns'

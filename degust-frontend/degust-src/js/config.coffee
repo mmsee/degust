@@ -126,7 +126,7 @@ input_type_options = [{key: 'counts', label: 'RNA-seq counts'},
                      ]
 
 Multiselect = require('vue-multiselect').default
-Modal = require('modal-vue').default
+Modal = require('./modal.vue').default
 deleteModal = require('./modal-deleteData.vue').default
 about = require('./about.vue').default
 slickTable = require('./slick-table.vue').default
@@ -144,14 +144,14 @@ module.exports =
         navbar: navbar
     data: () ->
         settings:
-            info_columns: []
+            info_columns: []     # Columns that have been selected as "info columns"
             fc_columns: []
             input_type: null
             contrasts: []
         csv_data: ""
         asRows: []
-        columns_info: []
-        table_columns: []
+        column_names: []          # This is all column names available from the csv
+        table_columns: []         # All csv columns for display in the slick table
         orig_settings:
             is_owner: false
         advanced: false
@@ -227,12 +227,12 @@ module.exports =
             if this.is_maxquant
                 this.table_columns = this.table_columns.filter( (obj) ->
                     obj.name.match("Protein ID|^LFQ.*|Potential contaminant|Reverse|Peptide counts \\(razor\\+unique\\)"))
-            this.columns_info = this.table_columns.map( (obj) -> obj.name )
+            this.column_names = this.table_columns.map( (obj) -> obj.name )
 
             # No config has been saved yet, so let's guess any useful columns
             if !this.settings.name?
                 if this.is_maxquant
-                    this.settings.info_columns = this.columns_info.filter((c) -> ['Protein IDs','Peptide counts (razor+unique)'].includes(c))
+                    this.settings.info_columns = this.column_names.filter((c) -> ['Protein IDs','Peptide counts (razor+unique)'].includes(c))
 
             asRows.forEach((r,i) -> r.id = i)
             this.asRows = Vue.noTrack(asRows)
@@ -313,17 +313,42 @@ module.exports =
                 if (c.column.length != this.settings.replicates.length)
                     errs.push("Contrast '"+c.name+"' does not match number of samples")
             )
+            errs = errs.concat(this.check_duplicate_columns())
             errs
+
+        check_duplicate_columns: () ->
+            errs=[]
+            # Get all the column names from the configured replicates
+            used_cols = this.settings.replicates.map((rep) -> rep.cols).reduce(((x, y) -> x.concat(y)), [])
+            # Get the  duplicate columns from the CSV
+            duplicate_cols = []
+            for col, index in this.column_names
+                if this.column_names.lastIndexOf(col) > index
+                    duplicate_cols.push(col)
+            console.log("duplicates",duplicate_cols)
+            # Check if any of the duplicate columns are actually used
+            console.log "info",this.settings.info_columns
+            for col in duplicate_cols
+                if (col in this.settings.info_columns) || (col in used_cols)
+                    errs.push("Cannot use column '#{col}' as it is duplicated in the csv file")
+            errs
+
         check_conditon_names: () ->
             invalid = []
-            for rep in this.settings.replicates
-                if (rep.name in this.columns_info)
-                    invalid.push("ERROR : Cannot use condition name '#{rep.name}', it is already a column name")
-                if (rep.name=="")
+            rep_names = this.settings.replicates.map((rep) -> rep.name)
+            if (new Set(rep_names).size != rep_names.length)
+                invalid.push("Duplicate condition name")
+
+            for name in rep_names
+                if (name in this.column_names)
+                    invalid.push("ERROR : Cannot use condition name '#{name}', it is already a column name")
+                if (name=="")
                     invalid.push("Missing condition name")
             this.settings.contrasts.forEach((c) =>
-                if (c.name in this.columns_info)
+                if (c.name in this.column_names)
                     invalid.push("ERROR : Cannot use contrast name '#{c.name}', it is already a column name")
+                if (c.name in rep_names)
+                    invalid.push("ERROR : Contrast name '#{c.name}' is already a condition name")
                 if (c.name=="")
                     invalid.push("Missing contrast name")
             )

@@ -131,7 +131,6 @@
 
 <script lang='coffee'>
 
-Modal = require('modal-vue').default
 { GeneList } = require('./gene_list.coffee')
 GeneListAPI = require('./gene_list_api.coffee')
 addGeneListModal = require('./modal-add-gene-list.vue').default
@@ -156,7 +155,6 @@ module.exports =
         geneLists: []
         curListContents: []
     components:
-        modal: Modal
         addGeneListModal: addGeneListModal
     watch:
         searchTerm: (val) ->
